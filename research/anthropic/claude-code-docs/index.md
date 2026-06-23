@@ -19,7 +19,16 @@ Source: `https://code.claude.com/docs/en/`. Top-level structure mirrors the offi
 - [Glossary](https://code.claude.com/docs/en/glossary) — terminology reference.
 - [Docs map](https://code.claude.com/docs/en/claude_code_docs_map) — official site map.
 
-**Cross-OS note:** Windows install via PowerShell (`irm https://claude.ai/install.ps1 | iex`) or CMD (`curl ... install.cmd && install.cmd`). Native Windows works without admin; WSL also supported. Git for Windows recommended so the Bash tool works.
+**Install methods (cross-OS):**
+- **Native installer (recommended; auto-updates in background):**
+  - macOS / Linux / WSL: `curl -fsSL https://claude.ai/install.sh | bash`
+  - Windows PowerShell: `irm https://claude.ai/install.ps1 | iex`
+  - Windows CMD: `curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd`
+- **Homebrew (macOS; manual updates):** `brew install --cask claude-code` (stable, ~1 week behind) or `claude-code@latest` (latest channel).
+- **WinGet (Windows; manual updates):** `winget install Anthropic.ClaudeCode`.
+- **Linux package managers:** apt / dnf / apk (Debian, Fedora, RHEL, Alpine).
+
+**Windows shell note:** Git for Windows is recommended so the Bash tool works natively. Without it, Claude Code uses PowerShell as the shell tool instead. WSL setups don't need Git for Windows.
 
 ## Core concepts
 
@@ -35,7 +44,10 @@ Source: `https://code.claude.com/docs/en/`. Top-level structure mirrors the offi
 - [Skills](https://code.claude.com/docs/en/skills) — `SKILL.md` files Claude auto-invokes when relevant; stored in `.claude/skills/`.
 - [Workflows](https://code.claude.com/docs/en/workflows) — orchestrating subagents at scale.
 - [Hooks reference](https://code.claude.com/docs/en/hooks) — events (PreToolUse, Stop, etc.), matchers, handlers.
+- [MCP (Model Context Protocol)](https://code.claude.com/docs/en/mcp) — open standard for connecting Claude Code to external data sources (Google Drive, Jira, Slack, custom tooling).
+- [MCP quickstart](https://code.claude.com/docs/en/mcp-quickstart) — first MCP server end-to-end.
 - [Discover plugins](https://code.claude.com/docs/en/discover-plugins) — installing prebuilt plugins from marketplaces.
+- [Third-party providers / integrations](https://code.claude.com/docs/en/third-party-integrations) — supported in Terminal CLI and VS Code.
 
 ## Use Claude Code
 
@@ -60,20 +72,46 @@ Source: `https://code.claude.com/docs/en/`. Top-level structure mirrors the offi
 
 ## Platforms and integrations
 
+### Surfaces
+
 - [Overview](https://code.claude.com/docs/en/features-overview) — platforms & integrations index page.
-- **Remote Control** — running Claude Code from one device against another. *(URL TBD)*
-- [Claude Code on the web](https://code.claude.com/docs/en/claude-code-on-the-web) — browser/phone, Anthropic-managed cloud sessions.
-- [Web quickstart](https://code.claude.com/docs/en/web-quickstart) — first cloud session.
-- [Desktop application](https://code.claude.com/docs/en/desktop) — Mac/Windows desktop app.
-- [Desktop quickstart](https://code.claude.com/docs/en/desktop-quickstart) — first desktop session.
-- **Chrome extension (beta)** — Claude Code in the browser. *(URL TBD)*
-- **Computer use (preview)** — Claude controls the computer (mouse/keyboard/screen). *(URL TBD)*
-- [Visual Studio Code](https://code.claude.com/docs/en/vs-code) — install extension from VS Code marketplace.
-- [JetBrains IDEs](https://code.claude.com/docs/en/jetbrains) — install plugin from JetBrains marketplace.
-- [Code Review](https://code.claude.com/docs/en/code-review) — review changes inside Claude Code (paired with `/code-review` skill).
+- [Visual Studio Code](https://code.claude.com/docs/en/vs-code) — install extension; also works with Cursor (`cursor:extension/anthropic.claude-code`).
+- [JetBrains IDEs](https://code.claude.com/docs/en/jetbrains) — plugin requires the CLI installed separately.
+- [Desktop application](https://code.claude.com/docs/en/desktop) — macOS (Intel/Apple Silicon), Windows x64, Windows ARM64. Visual diff review; receives Dispatch sessions; `/desktop` hand-off from terminal.
+- [Desktop quickstart](https://code.claude.com/docs/en/desktop-quickstart).
+- [Claude Code on the web](https://code.claude.com/docs/en/claude-code-on-the-web) — `claude.ai/code`; Anthropic-managed cloud sessions; also via iOS app.
+- [Web quickstart](https://code.claude.com/docs/en/web-quickstart).
+- [Chrome](https://code.claude.com/docs/en/chrome) — debug live web applications from the browser.
+
+### Mobility (move work across devices)
+
+- [Remote Control](https://code.claude.com/docs/en/remote-control) — drive a local session from phone or another device.
+- [Channels](https://code.claude.com/docs/en/channels) — push events from Telegram, Discord, iMessage, or custom webhooks into a session.
+- **`claude --teleport`** — pull a web/iOS session into the local terminal (requires claude.ai subscription).
+- **Dispatch** (covered in [desktop docs](https://code.claude.com/docs/en/desktop)) — message a task from phone; opens a Desktop session.
+
+### CI / automation / scheduled
+
+- [Code Review](https://code.claude.com/docs/en/code-review) — review changes inside Claude Code; pairs with the `/code-review` skill.
 - [GitHub Actions](https://code.claude.com/docs/en/github-actions) — `@claude` in PRs/issues to trigger Claude on CI.
-- [Routines](https://code.claude.com/docs/en/routines) — scheduled/recurring automated tasks.
-- **Claude Code in Slack** — Slack integration. *(URL TBD)*
+- [GitLab CI/CD](https://code.claude.com/docs/en/gitlab-ci-cd) — GitLab pipeline integration.
+- [Routines](https://code.claude.com/docs/en/routines) — recurring tasks on Anthropic-managed infra (runs even when your machine is off); triggers from cron, API calls, or GitHub events; created via web, Desktop app, or `/schedule` in CLI.
+- [Desktop scheduled tasks](https://code.claude.com/docs/en/desktop-scheduled-tasks) — recurring tasks running on your local machine.
+- [`/loop` (scheduled tasks)](https://code.claude.com/docs/en/scheduled-tasks) — repeat a prompt within a CLI session for quick polling.
+
+### Chat & team
+
+- [Slack](https://code.claude.com/docs/en/slack) — mention `@Claude` in Slack; routes to a PR.
+
+### Agent teams
+
+- [Sub-agents](https://code.claude.com/docs/en/sub-agents) — spawn multiple parallel agents with a lead coordinating.
+- [Background agents view](https://code.claude.com/docs/en/agent-view) — watch multiple full sessions running in parallel from one screen.
+
+### Other
+
+- **Computer use (preview)** — Claude controls mouse/keyboard/screen. *(URL TBD)*
+- **Chrome extension (beta)** — separate from the `/chrome` debug-tool integration. *(URL TBD)*
 - [Development containers](https://code.claude.com/docs/en/devcontainer) — running Claude Code in a devcontainer.
 
 ## Not in the user-facing sidebar
