@@ -17,6 +17,7 @@ Stated goals from `CLAUDE.md`: prepare a machine and project quickly, use tokens
 
 9. **[Sub-agents](https://code.claude.com/docs/en/sub-agents)** — biggest single tool for protecting context window on long tasks.
 10. **[Skills](https://code.claude.com/docs/en/skills)** — auto-invoked capabilities; pair well with hooks.
+10a. **[MCP](https://code.claude.com/docs/en/mcp)** + **[MCP quickstart](https://code.claude.com/docs/en/mcp-quickstart)** — the main extension surface for connecting Claude to external systems (docs, tickets, custom tooling). Read before any client project that uses Jira/Drive/Slack.
 11. **[Best practices](https://code.claude.com/docs/en/best-practices)** — Anthropic's own framing; likely to validate or reshape Tier 1 takeaways.
 12. **[Manage sessions](https://code.claude.com/docs/en/manage-sessions)** — resume/fork/share patterns matter once you're running parallel work or switching devices (Mac ↔ Windows VM).
 13. **[Advanced setup](https://code.claude.com/docs/en/setup)** + **[Authentication](https://code.claude.com/docs/en/authentication)** — feeds the cross-OS install playbook in `claude/setup/`. Windows specifics already noted: PowerShell/CMD installer, Git for Windows required for Bash tool.
