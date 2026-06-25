@@ -4,11 +4,13 @@ Checklists for preparing a project to work well with coding agents. Agent-agnost
 
 ## Current docs
 
-- **[`new-project.md`](new-project.md)** — what to do when opening Claude (or any coding agent) on a project for the first time. The three things that matter (memory, permissions, plan-mode default), optional scaffolding to defer until friction shows up, pre-flight checklist with literal commands in order.
+- **[`new-machine.md`](new-machine.md)** — once per machine. Install, authenticate, drop personal `~/.claude/settings.json`, install VS Code extension, verify. Includes cross-machine sync reality (what crosses Mac ↔ Windows VM and what doesn't).
+- **[`new-project.md`](new-project.md)** — once per project. The three things that matter (memory, permissions, plan-mode default), optional scaffolding to defer until friction shows up, pre-flight checklist with literal commands in order.
+
+Run order: `new-machine.md` first (once per machine), then `new-project.md` per project.
 
 ## Deferred
 
-- **`new-machine.md`** — fresh-machine setup, cross-OS. Pulls from [`claude/setup/install.md`](../../claude/setup/install.md), [`claude/setup/authentication.md`](../../claude/setup/authentication.md), and [`claude/setup/vs-code.md`](../../claude/setup/vs-code.md). Most relevant for Mac ↔ Windows VM transitions.
 - **`mid-project-handoff.md`** — what to do when joining a project Claude Code has already been used on (other developers' settings to honor, `.claude/` dir audit, memory file curation).
 
 ## Why this lives in `shared/`
