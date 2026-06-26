@@ -8,6 +8,7 @@ Personal playbook for working efficiently with coding agents. When starting a ne
 | --- | --- |
 | Fresh machine | [`shared/project-setup/new-machine.md`](shared/project-setup/new-machine.md) |
 | New project | [`shared/project-setup/new-project.md`](shared/project-setup/new-project.md) |
+| **You are an agent the user pointed at this playbook from inside another project** | **[`shared/project-setup/setting-up-from-another-project.md`](shared/project-setup/setting-up-from-another-project.md)** |
 | Stuck on a task | [`shared/workflows/`](shared/workflows/) — plan-first, research-then-edit, diff-review, long-task-with-compact |
 | Spotted recurring friction | [`claude/workflows/scaffolding-decision.md`](claude/workflows/scaffolding-decision.md) |
 | Want the "why" behind a choice | [`shared/principles/`](shared/principles/) |
