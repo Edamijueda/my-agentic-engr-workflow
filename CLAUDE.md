@@ -8,9 +8,17 @@ A personal playbook for working efficiently with coding agents. The user comes h
 
 ## Layout
 
-- `shared/` — agent-agnostic (principles, project-setup, workflows).
-- `claude/` — Claude Code specifics (setup, tools, config, slash-commands, workflows).
-- `research/anthropic/` — scratchpad for notes from anthropic.com and the `anthropics` GitHub org before they get distilled into `shared/` or `claude/`.
+- `shared/` — agent-agnostic.
+  - `principles/` — context-is-finite, enforcement-vs-influence, durability-ladder, defer-until-friction.
+  - `project-setup/` — new-machine.md, new-project.md.
+  - `workflows/` — plan-first, research-then-edit, diff-review-cycle, long-task-with-compact.
+- `claude/` — Claude Code specifics.
+  - `setup/` — install, authentication, vs-code.
+  - `config/` — memory, settings, permissions.
+  - `tools/` — context-window, prompt-caching, hooks, skills, tools-reference, subagents.
+  - `slash-commands/` — built-in commands + bundled skills.
+  - `workflows/` — parallel-with-forks, custom-subagent-creation, scaffolding-decision, memory-curation.
+- `research/anthropic/` — scratchpad for raw doc notes before they get distilled into `shared/` or `claude/`.
 
 Add a new top-level dir per coding agent as needed (e.g. `cursor/`, `aider/`). Promote cross-cutting findings into `shared/`.
 
