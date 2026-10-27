@@ -1,3 +1,10 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/sub-agents
+---
+
 # Your first custom subagent
 
 How to graduate from built-in `Explore` to a project-specific subagent. **Defer until the rule of three** — see [`../../shared/principles/defer-until-friction.md`](../../shared/principles/defer-until-friction.md).

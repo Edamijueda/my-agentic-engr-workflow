@@ -1,3 +1,12 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/memory
+  - https://code.claude.com/docs/en/settings
+  - https://code.claude.com/docs/en/permissions
+---
+
 # Setting up Claude Code from another project (agent-runnable)
 
 > **You are the agent reading this.** The user is in another project and asked you to look at this playbook and set up the Claude Code basics they need. This doc is the literal recipe. Follow it in order. Stop and ask only at the decision points marked **Confirm with user**.

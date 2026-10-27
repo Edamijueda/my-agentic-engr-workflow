@@ -35,7 +35,7 @@ The temptation list. Resist all of these for a brand-new project:
 - **Custom skills.** Built-in skills (`/code-review`, `/debug`, `/run`, `/verify`) cover common workflows. Wait until you've typed the same multi-step procedure into chat 3+ times.
 - **MCP servers.** Add when the project genuinely needs Jira/Drive/Slack access. Don't add them for "completeness."
 - **Plugins beyond `skill-creator`.** Most plugins are useful in specific contexts. Don't install marketplace recommendations preemptively.
-- **`auto` permission mode.** Powerful but a research preview. Stay on `plan` or `acceptEdits` until you have a concrete reason to want auto's reduced prompts.
+- **Permission rules.** Don't pre-write `deny` entries for commands you've never run. Start from the secrets-and-force-push baseline, then add rules when a session actually surprises you. Which mode supervises those rules is a product default that moves — see [`../../claude/config/permissions.md`](../../claude/config/permissions.md) for the current one.
 - **Detailed `.claude/rules/` hierarchy.** Start with one `CLAUDE.md`. Split into path-scoped rules only when the file genuinely exceeds 200 lines.
 
 ## What's not deferrable

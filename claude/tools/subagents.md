@@ -1,3 +1,10 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/sub-agents
+---
+
 # Subagents
 
 Specialized AI assistants that run in their own context window with custom system prompts, tool access, and permissions. The single biggest token-protection lever — delegate a verbose side-task and only the summary comes back. Distilled from `https://code.claude.com/docs/en/sub-agents`.
@@ -57,7 +64,7 @@ Higher priority wins on name collision:
 
 **Discovery rules:**
 
-- **Project subagents**: walked up from CWD — every `.claude/agents/` between CWD and repo root is scanned. v2.1.178+: closest-to-CWD wins on name collision.
+- **Project subagents**: walked up from CWD — every `.claude/agents/` between CWD and repo root is scanned. Closest-to-CWD wins on name collision.
 - **`--add-dir`** directories ALSO have their `.claude/agents/` scanned (exception to the "additional directories grant file access only" rule).
 - **Recursive scan** in user + project scopes: organize into subfolders (`agents/review/`, `agents/research/`). **Identity = the `name` frontmatter field only**, not the path. Keep names unique within a scope — duplicates are silently discarded.
 - **Plugin scope**: subfolder IS part of the scoped identifier. `agents/review/security.md` in `my-plugin` registers as `my-plugin:review:security`.
@@ -169,7 +176,7 @@ mcpServers:
 
 > **Trick for keeping MCP server tools out of the main conversation context**: define inline in the subagent frontmatter rather than in `.mcp.json`. The subagent gets the tools; the parent never sees the descriptions burning context.
 
-**Restrictions that apply (v2.1.153+)**: `--strict-mcp-config`, `--bare`, managed MCP, `allowedMcpServers`/`deniedMcpServers`. But `--strict-mcp-config` does **not** filter servers passed via `--agents` flag or SDK (explicit caller input).
+**Restrictions that apply**: `--strict-mcp-config`, `--bare`, managed MCP, `allowedMcpServers`/`deniedMcpServers`. But `--strict-mcp-config` does **not** filter servers passed via `--agents` flag or SDK (explicit caller input).
 
 ## Permission modes (parent precedence rules)
 
@@ -288,7 +295,7 @@ Claude decides; you can also:
 - Press **Ctrl+B** to background a running task.
 - Disable all background: `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`.
 
-**Permission prompts for background subagents (v2.1.186+)**: surface in the main session, naming which subagent is asking. Esc denies one tool call without stopping the subagent. **Before v2.1.186**: background subagents silently auto-denied any prompt.
+**Permission prompts for background subagents**: surface in the main session, naming which subagent is asking. Esc denies one tool call without stopping the subagent.
 
 When `CLAUDE_CODE_FORK_SUBAGENT=1`, **every** subagent spawn runs in background regardless of the `background` field.
 
@@ -334,12 +341,12 @@ Use the code-reviewer subagent to find performance issues, then use the optimize
 
 Claude passes relevant context between sequential subagents.
 
-## Nested subagents (v2.1.172+)
+## Nested subagents
 
 A subagent can spawn its own subagents. Useful when a delegated task itself splits into parallel subtasks — only the top-level subagent's summary returns to you.
 
 - **Depth limit: 5.** A subagent at depth 5 doesn't receive the Agent tool and can't spawn further. **Limit is not configurable.**
-- **Depth fixed at spawn time** (v2.1.187+). Resuming a subagent later doesn't change its depth.
+- **Depth fixed at spawn time**. Resuming a subagent later doesn't change its depth.
 - To prevent a specific subagent from spawning others: omit `Agent` from `tools` or add to `disallowedTools`.
 - **A fork cannot spawn another fork**, but can spawn other subagent types (counts toward depth limit).
 
@@ -364,7 +371,7 @@ A stopped subagent that receives a `SendMessage` auto-resumes in the background.
 
 **Auto-compaction**: subagents support it with same logic as main. `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` applies. Compaction logged in transcript as `compact_boundary` events with `preTokens`.
 
-## Forks (v2.1.117+, enabled by default v2.1.161+)
+## Forks (enabled by default)
 
 A fork is a subagent that **inherits the entire conversation**. Drops input isolation: same system prompt, tools, model, message history as the main session. Output isolation stays: fork's tool calls don't show in conversation, only its final result returns.
 
@@ -404,7 +411,7 @@ Named from the first words of the directive. Appears in the panel below your pro
 | Context | Full conversation history | Fresh + task prompt |
 | System prompt + tools | Same as main session | From definition |
 | Model | Same as main session | From `model` field |
-| Permission prompts | Terminal | **Main session (v2.1.186+)** when background |
+| Permission prompts | Terminal | **Main session** when background |
 | Prompt cache | **Shared with main session** | Separate |
 
 **Cache implication**: a fork's first request reuses the parent's prompt cache → cheaper than spawning a fresh subagent for tasks needing the same context. See `prompt-caching.md`.

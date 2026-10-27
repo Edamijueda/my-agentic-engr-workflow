@@ -1,3 +1,10 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/code-review
+---
+
 # Diff-review cycle
 
 The before-you-ship loop. Use `/diff` / `/code-review` / `/simplify` / `/rewind` together to catch issues without re-thinking the work yourself.
@@ -17,7 +24,7 @@ If the change is two lines of obvious cleanup, skip it. The cycle is for changes
 | --- | --- |
 | **`/diff`** | Interactive side-by-side viewer. You read what changed. |
 | **`/code-review`** | Reviews the current diff for **correctness bugs + reuse/simplify/efficiency cleanups**. Effort levels: `low`/`medium`/`high`/`xhigh`/`max`/`ultra`. Optional `--fix` applies findings; `--comment` posts as inline PR comments. |
-| **`/simplify`** | **Cleanup-only review** (v2.1.154+). Four parallel agents: reuse, simplification, efficiency, abstraction level. No bug hunting — use `/code-review` for that. |
+| **`/simplify`** | **Cleanup-only review.** Four parallel agents: reuse, simplification, efficiency, abstraction level. No bug hunting — use `/code-review` for that. |
 | **`/security-review`** | Focused security pass. Injection, auth, data exposure. |
 | **`/rewind`** | Roll the conversation + code back to an earlier turn. Cheaper than `/compact` — preserves prompt cache. |
 

@@ -1,3 +1,11 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/settings
+  - https://code.claude.com/docs/en/settings-reference
+---
+
 # Settings: `settings.json`, scopes, precedence
 
 How Claude Code is configured — the central file is `settings.json`, but there are several scopes, several delivery channels, and a few neighboring files. Distilled from `https://code.claude.com/docs/en/settings`.
@@ -21,7 +29,7 @@ On Windows, `~/.claude` = `%USERPROFILE%\.claude`. Same logical layout, differen
 
 Two array exceptions:
 - `fallbackModel` — highest-precedence scope supplies the entire chain.
-- `availableModels` — when set in managed/policy, lower-precedence entries are replaced (v2.1.175+).
+- `availableModels` — when set in managed/policy, lower-precedence entries are replaced.
 
 ## Other config files in the neighborhood
 
@@ -61,7 +69,7 @@ Security-critical fields (e.g. `allowedMcpServers`, `forceLoginOrgUUID`) fail cl
 
 ## `/config` command
 
-`/config` opens a tabbed UI. **As of v2.1.181** you can also pass `key=value` to skip the UI:
+`/config` opens a tabbed UI. You can also pass `key=value` to skip the UI:
 
 ```
 /config verbose=true
@@ -102,7 +110,7 @@ The full list is enormous. The keys below are the ones most likely to matter day
 | `verbose` | Full tool output instead of truncated summaries. |
 | `viewMode` | Default transcript mode at startup. |
 | `language` | Force a response language (`"japanese"`, etc.). |
-| `axScreenReader` | Screen-reader-friendly flat output. v2.1.181+. |
+| `axScreenReader` | Screen-reader-friendly flat output. |
 | `prefersReducedMotion` | Disable spinners/shimmer/flash. |
 | `spinnerTipsEnabled` | Toggle in-spinner tips. |
 | `awaySummaryEnabled` | One-line recap when you return. |
@@ -113,10 +121,13 @@ The full list is enormous. The keys below are the ones most likely to matter day
 | Key | What it does |
 | --- | --- |
 | `autoCompactEnabled` | Auto-compact when context runs out. Default `true`. Env: `DISABLE_AUTO_COMPACT`. |
+| `idleCompaction` | Compact a long conversation left idle on the 1-hour cache TTL. `false` to stop it. v2.1.290+. |
+| `promptCacheTtl` / `subagentPromptCacheTtl` | Cache TTL (`5m` or `1h`) for the main conversation and for everything else. **Set `promptCacheTtl: "1h"` on an API key or cloud provider** — you don't get the hour by default there. v2.1.242+. See `../tools/prompt-caching.md`. |
+| `switchModelsOnFlag` | `false` to be asked before automatic content-based model fallback instead of switching silently. |
 | `autoMemoryEnabled` / `autoMemoryDirectory` | See `memory.md`. |
 | `fileCheckpointingEnabled` | Snapshot files before each edit so `/rewind` can restore. |
 | `respectGitignore` | Whether `@` file picker respects `.gitignore`. Default `true`. |
-| `respondToBashCommands` | After `!` shell commands, set `false` to skip Claude's response (just add output to context). v2.1.186+. |
+| `respondToBashCommands` | After `!` shell commands, set `false` to skip Claude's response (just add output to context). |
 | `includeGitInstructions` | Strip the built-in commit/PR workflow + git-status from system prompt. `false` if you have your own git skills. |
 | `cleanupPeriodDays` | Auto-delete session files older than N days (default 30, min 1). |
 | `agent` | Run the main thread as a named subagent (applies its prompt/tools/model). |
@@ -136,7 +147,7 @@ The full list is enormous. The keys below are the ones most likely to matter day
 | --- | --- |
 | `permissions.allow / ask / deny` | Rule arrays. |
 | `permissions.additionalDirectories` | Extra working dirs for file access. |
-| `permissions.defaultMode` | Default `/permissions` mode. Project/local cannot set `auto` (v2.1.142+). |
+| `permissions.defaultMode` | Default `/permissions` mode. Project/local cannot set `auto`. |
 | `sandbox.*` | Sandbox config — full section below. |
 
 ### Hooks + env + customization
@@ -144,7 +155,7 @@ The full list is enormous. The keys below are the ones most likely to matter day
 | Key | What it does |
 | --- | --- |
 | `hooks` | Hook definitions (see hooks doc). |
-| `env` | Env vars for every session and spawned subprocess. `NO_COLOR`/`FORCE_COLOR` here apply to subprocesses only (v2.1.143+); for UI colors set in your shell. |
+| `env` | Env vars for every session and spawned subprocess. `NO_COLOR`/`FORCE_COLOR` here apply to subprocesses only; for UI colors set in your shell. |
 | `allowedHttpHookUrls` | URL patterns HTTP hooks may target. Empty array = block all. |
 | `httpHookAllowedEnvVars` | Env var names HTTP hooks may interpolate. |
 | `disableAllHooks` | Kill switch. |
@@ -176,7 +187,7 @@ The full list is enormous. The keys below are the ones most likely to matter day
 | `enabledPlugins` | `{ "name@marketplace": true/false }`. Project precedence > user; opt out via `.claude/settings.local.json`. |
 | `extraKnownMarketplaces` | Register additional plugin marketplaces. |
 | `strictKnownMarketplaces` | **Managed only** — allowlist of marketplace sources. |
-| `strictPluginOnlyCustomization` | **Managed only** — lock skills/agents/hooks/mcp to plugins + managed. `true` or array of surfaces. v2.1.82+. |
+| `strictPluginOnlyCustomization` | **Managed only** — lock skills/agents/hooks/mcp to plugins + managed. `true` or array of surfaces. |
 | `disableBundledSkills` | Disable built-in skills + workflows. |
 | `disableWorkflows` | Disable dynamic workflows. |
 
@@ -261,7 +272,7 @@ A starting point — adapt per project. Save as `.claude/settings.json` (commit)
 ```json
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "model": "claude-sonnet-4-6",
+  "model": "claude-sonnet-5-5",
   "fallbackModel": ["default"],
   "theme": "dark",
   "tui": "fullscreen",

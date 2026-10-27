@@ -1,3 +1,10 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/sub-agents
+---
+
 # Research-then-edit
 
 A read-only subagent reads the files; you edit in main with the summary as focused context. The single cheapest token-savings workflow.

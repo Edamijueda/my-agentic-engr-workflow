@@ -1,3 +1,11 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/setup
+  - https://code.claude.com/docs/en/authentication
+---
+
 # Setting up a new machine — checklist
 
 Once per machine. Companion to [`new-project.md`](new-project.md), which runs once per project.

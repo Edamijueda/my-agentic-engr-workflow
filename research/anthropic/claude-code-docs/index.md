@@ -1,8 +1,15 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/overview
+---
+
 # Claude Code docs — surface map (breadth pass)
 
 Source: `https://code.claude.com/docs/en/`. Top-level structure mirrors the official sidebar TOC. Captured 2026-06-22.
 
-> WebFetch can't reach `code.claude.com` from this environment (domain block). One-liners are compiled from WebSearch summaries; verify during each deep-dive.
+> One-liners below were originally compiled from WebSearch summaries because WebFetch couldn't reach `code.claude.com` from this environment. **That block is gone** — WebFetch reaches the docs directly as of 2026-10-27, so refresh passes can fetch and re-distill rather than infer. See [`../../../shared/workflows/doc-freshness.md`](../../../shared/workflows/doc-freshness.md).
 >
 > Reference pages (Settings, Hooks, Tools reference, Permissions, Slash commands, Sub-agents, Skills) are real docs pages that aren't all top-level in the sidebar — listed below under the most relevant section.
 
@@ -35,8 +42,8 @@ Source: `https://code.claude.com/docs/en/`. Top-level structure mirrors the offi
 - [How Claude Code works](https://code.claude.com/docs/en/how-claude-code-works) — three phases: gather context, take action, verify.
 - [Extend Claude Code](https://code.claude.com/docs/en/features-overview) — overview of the extension surface (sub-agents, skills, hooks, plugins, MCP).
 - [Explore the .claude directory](https://code.claude.com/docs/en/claude-directory) — what lives under `.claude/` (project) and `~/.claude/` (global).
-- [Explore the context window](https://code.claude.com/docs/en/context) — how context budget works; what eats it and how to manage it. *(URL guess — confirm)*
-- [Prompt caching](https://code.claude.com/docs/en/prompt-caching) — caching behavior in Claude Code sessions (token-cost lever). *(URL guess — confirm)*
+- [Explore the context window](https://code.claude.com/docs/en/context-window) — how context budget works; what eats it and how to manage it.
+- [Prompt caching](https://code.claude.com/docs/en/prompt-caching) — caching behavior in Claude Code sessions (token-cost lever).*
 
 ### Extension surface (nested under Extend Claude Code)
 
@@ -53,9 +60,9 @@ Source: `https://code.claude.com/docs/en/`. Top-level structure mirrors the offi
 
 - [Store instructions and memories](https://code.claude.com/docs/en/memory) — `CLAUDE.md` for project/user/org context.
 - [Permission modes](https://code.claude.com/docs/en/permission-modes) — session-level modes (default, plan, accept-edits, bypass) and when each fits.
-- [Manage sessions](https://code.claude.com/docs/en/manage-sessions) — resume, fork, share session state across devices. *(URL guess — confirm)*
+- [Manage sessions](https://code.claude.com/docs/en/sessions) — resume, fork, share session state across devices.
 - [Common workflows](https://code.claude.com/docs/en/common-workflows) — recipes for frequent tasks.
-- [Prompt library](https://code.claude.com/docs/en/prompt-library) — reusable prompts shipped by Anthropic. *(URL guess — confirm)*
+- [Prompt library](https://code.claude.com/docs/en/prompt-library) — reusable prompts shipped by Anthropic.
 - [Best practices](https://code.claude.com/docs/en/best-practices) — environment config, parallel sessions, recurring patterns.
 
 ### Reference (nested under Use Claude Code)
@@ -126,7 +133,7 @@ Surface area I found via search that isn't in the current top-level TOC — like
 - [Identity & access management](https://code.claude.com/docs/en/iam)
 - [Team](https://code.claude.com/docs/en/team)
 - [Admin setup](https://code.claude.com/docs/en/admin-setup)
-- [Enterprise deployment overview](https://code.claude.com/docs/en/bedrock-vertex) — Bedrock / Vertex AI / Microsoft Foundry.
+- [Enterprise deployment overview](https://code.claude.com/docs/en/bedrock-vertex) — Bedrock / Google Cloud's Agent Platform / Microsoft Foundry. (Page slug is still the legacy `bedrock-vertex`.)
 - [Corporate proxy](https://code.claude.com/docs/en/corporate-proxy)
 - [GitHub Enterprise Server](https://code.claude.com/docs/en/github-enterprise-server)
 

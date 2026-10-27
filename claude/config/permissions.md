@@ -1,3 +1,11 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/permissions
+  - https://code.claude.com/docs/en/permission-modes
+---
+
 # Permissions: rules + modes
 
 How Claude Code decides whether to run a tool call. Distilled from `https://code.claude.com/docs/en/permissions` and `https://code.claude.com/docs/en/permission-modes`.
@@ -256,18 +264,26 @@ Approving switches the session to whichever mode you picked. `Ctrl+G` opens the 
 
 Set `defaultMode: "plan"` to make plan-by-default for a project.
 
-### `auto` (research preview, v2.1.83+)
+### `auto` (default since v2.1.283)
 
 Claude executes without routine prompts; a separate **classifier model** vets each action before it runs. Explicit ask rules still prompt; explicit deny rules still block.
 
-> **Auto mode is a research preview.** Reduces prompts, doesn't guarantee safety. Use where you trust the direction.
+**This is now the starting mode** for interactive terminal and VS Code sessions — you are in it unless you changed it. It was a research preview when this playbook first covered it; that framing is gone, but the caveat isn't: auto mode reduces prompts, it does not guarantee safety.
 
 **Requirements:**
-- Available on all plans; on Team/Enterprise, admin must enable in `claude.ai/admin-settings/claude-code`.
-- Models: Anthropic API needs Opus 4.6+ or Sonnet 4.6. **Bedrock / Vertex / Foundry: only Opus 4.7 / 4.8.**
-- On Bedrock / Vertex / Foundry, also set `CLAUDE_CODE_ENABLE_AUTO_MODE=1` in `env` (v2.1.158+).
+- All plans. On Team/Enterprise it's on by default — admins turn it *off* with `permissions.disableAutoMode: "disable"` in managed settings.
+- Models, by provider:
 
-**Repo-spoof protection:** `defaultMode: "auto"` is **ignored from `.claude/settings.json` and `.claude/settings.local.json`** (v2.1.142+). Set it in `~/.claude/settings.json` to make auto your personal default.
+  | Provider | Supported |
+  | --- | --- |
+  | Anthropic API, Claude Platform on AWS | Opus 4.6+, Sonnet 4.6+, Haiku 5.5, any Fable |
+  | Bedrock, Google Cloud's Agent Platform, Foundry, signed-in apps gateway | Sonnet 5+, Opus 4.7+, Haiku 5.5, any Fable |
+
+  Sonnet 4.5, Opus 4.5, Haiku 4.5 and claude-3 models are unsupported everywhere. Haiku 5.5 on the four cloud providers needs v2.1.293+.
+- No env var required. `CLAUDE_CODE_ENABLE_AUTO_MODE=1` is no longer needed on the cloud providers.
+- Optional knobs: `CLAUDE_CODE_AUTO_MODE_MODEL` picks the classifier model (v2.1.302+); `CLAUDE_CODE_AUTO_MODE_SERVER` controls whether the server runs the classifier review.
+
+**Repo-spoof protection:** `defaultMode: "auto"` is **ignored from `.claude/settings.json` and `.claude/settings.local.json`** . Set it in `~/.claude/settings.json` to make auto your personal default.
 
 **Classifier blocks by default:**
 
@@ -279,7 +295,7 @@ Claude executes without routine prompts; a separate **classifier model** vets ea
 - Modifying shared infrastructure.
 - Irreversibly destroying files that existed before the session.
 - Force push; pushing directly to `main`.
-- **Git rewriters that discard work:** `git reset --hard`, `git checkout -- .`, `git restore .`, `git clean -fd`, `git stash drop`, `git stash clear` (v2.1.182+).
+- **Git rewriters that discard work:** `git reset --hard`, `git checkout -- .`, `git restore .`, `git clean -fd`, `git stash drop`, `git stash clear`.
 - `git commit --amend` when HEAD wasn't created in this session.
 - `terraform/pulumi/cdk/terragrunt destroy`; applying a plan that destroys resources.
 
@@ -297,7 +313,7 @@ Claude executes without routine prompts; a separate **classifier model** vets ea
 
 **Broad allow rules dropped on entering auto:** `Bash(*)`, `Bash(python*)`, package-manager run commands, `Agent` allow rules. Narrow rules like `Bash(npm test)` carry over. Restored on leaving auto.
 
-**Subagents** (v2.1.178+): classifier vets the delegated task at spawn, each action during the run, and reviews the full action history on return.
+**Subagents**: classifier vets the delegated task at spawn, each action during the run, and reviews the full action history on return.
 
 **Fallbacks:**
 
@@ -317,7 +333,7 @@ Set with `--permission-mode dontAsk`.
 
 ### `bypassPermissions`
 
-Skip every check. **Includes writes to protected paths as of v2.1.126** (earlier versions still prompted).
+Skip every check. **Includes writes to protected paths.**
 
 Still prompts:
 - Explicit ask rules.
@@ -380,7 +396,7 @@ By default Claude has access to the launch directory only. Extend with:
 | `--add-dir <path>` | One session | File access **+** loads skills, subagents, plugin keys, optionally CLAUDE.md (env-var-gated). Live reload for skills. |
 | `/add-dir` | One session | Same as `--add-dir`. |
 | `permissions.additionalDirectories` | Permanent (per scope) | **File access only.** No config loading from these dirs. |
-| `/cd <path>` (v2.1.169+) | Until next `/cd` | Relocates the session: loads new `CLAUDE.md`, `--resume` finds session from there. |
+| `/cd <path>` | Until next `/cd` | Relocates the session: loads new `CLAUDE.md`, `--resume` finds session from there. |
 
 **Key distinction**: `--add-dir`/`/add-dir` *and* `additionalDirectories` both grant file access — but only the flag/command versions also load configuration. For configuration shared across projects, prefer:
 - User-level (`~/.claude/agents/`, `~/.claude/settings.json`),

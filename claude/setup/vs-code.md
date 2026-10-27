@@ -1,3 +1,10 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/vs-code
+---
+
 # VS Code extension
 
 The recommended way to use Claude Code in VS Code (and Cursor, Devin Desktop, Kiro, and other forks). Distilled from `https://code.claude.com/docs/en/vs-code`.
@@ -113,7 +120,7 @@ If you use Claude Code on the web, those cloud sessions appear under the **Remot
 
 > Only web sessions started with a GitHub repository appear. Resuming downloads the conversation locally — **changes are not synced back to claude.ai.**
 
-## `/usage` dialog (v2.1.174+)
+## `/usage` dialog
 
 Account & usage panel:
 - Plan name, signed-in account.

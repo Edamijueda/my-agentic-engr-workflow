@@ -1,53 +1,71 @@
-# Deep-dive priorities
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/overview
+---
 
-Stated goals from `CLAUDE.md`: prepare a machine and project quickly, use tokens wisely, stay in the driver's seat. Ranking below reflects that — highest payoff first.
+# Doc coverage: what's distilled, what's left
 
-## Tier 1 — read first, distill into `claude/` immediately
+Replaces the original tier ranking from 2026-06-22. Every issue that document suggested has shipped, so ranking what to read first is no longer the useful question. What matters now is what's covered, what's deliberately not, and what the next gap is.
 
-1. **[Store instructions and memories](https://code.claude.com/docs/en/memory)** — `CLAUDE.md` is the cheapest, most portable lever. Already adopted at the repo root; need to capture scoping rules (project/user/org), import patterns, and best practices.
-2. **[Settings](https://code.claude.com/docs/en/settings)** — `settings.json` is the central config (permissions, env, hot-reload). Foundational for hooks and permissions.
-3. **[Permissions](https://code.claude.com/docs/en/permissions)** + **[Permission modes](https://code.claude.com/docs/en/permission-modes)** — direct token + safety control. Modes (default/plan/accept-edits/bypass) shape *how* sessions run; allow/deny rules shape *what* runs.
-4. **[Explore the context window](https://code.claude.com/docs/en/context)** — direct token-cost lever. Understanding what eats context informs every other choice (subagents, plan mode, file reads).
-5. **[Prompt caching](https://code.claude.com/docs/en/prompt-caching)** — biggest cost reduction per change in habit. Goes hand-in-hand with the context page.
-6. **[Slash commands](https://code.claude.com/docs/en/slash-commands)** — in-session efficiency multiplier; custom commands compound over time.
-7. **[Tools reference](https://code.claude.com/docs/en/tools-reference)** — knowing what's built in (and the output/size limits) directly affects token use.
-8. **[Hooks](https://code.claude.com/docs/en/hooks)** — encodes "from now on, when X happens, do Y" in a way memory/preferences can't. High leverage once internalized.
+For the mechanics of checking whether the distilled docs still hold, see [`../../../shared/workflows/doc-freshness.md`](../../../shared/workflows/doc-freshness.md).
 
-## Tier 2 — read after Tier 1; builds on the above
+## Covered
 
-9. **[Sub-agents](https://code.claude.com/docs/en/sub-agents)** — biggest single tool for protecting context window on long tasks.
-10. **[Skills](https://code.claude.com/docs/en/skills)** — auto-invoked capabilities; pair well with hooks.
-10a. **[MCP](https://code.claude.com/docs/en/mcp)** + **[MCP quickstart](https://code.claude.com/docs/en/mcp-quickstart)** — the main extension surface for connecting Claude to external systems (docs, tickets, custom tooling). Read before any client project that uses Jira/Drive/Slack.
-11. **[Best practices](https://code.claude.com/docs/en/best-practices)** — Anthropic's own framing; likely to validate or reshape Tier 1 takeaways.
-12. **[Manage sessions](https://code.claude.com/docs/en/manage-sessions)** — resume/fork/share patterns matter once you're running parallel work or switching devices (Mac ↔ Windows VM).
-13. **[Advanced setup](https://code.claude.com/docs/en/setup)** + **[Authentication](https://code.claude.com/docs/en/authentication)** — feeds the cross-OS install playbook in `claude/setup/`. Windows specifics already noted: PowerShell/CMD installer, Git for Windows required for Bash tool.
-14. **[Visual Studio Code](https://code.claude.com/docs/en/vs-code)** + **[JetBrains IDEs](https://code.claude.com/docs/en/jetbrains)** — IDE integration details.
-15. **[Explore the .claude directory](https://code.claude.com/docs/en/claude-directory)** — completes the mental model of project vs. global config.
-16. **[Prompt library](https://code.claude.com/docs/en/prompt-library)** — reusable Anthropic-curated prompts; some likely belong in `claude/slash-commands/` or `shared/workflows/`.
+Each of these has a distilled doc carrying a freshness stamp. The stamp, not this table, is the authority on how current it is.
 
-## Tier 3 — useful, but not blocking
+| Source page | Lives in |
+| --- | --- |
+| Memory | [`claude/config/memory.md`](../../../claude/config/memory.md) |
+| Settings, Settings reference | [`claude/config/settings.md`](../../../claude/config/settings.md) |
+| Permissions, Permission modes | [`claude/config/permissions.md`](../../../claude/config/permissions.md) |
+| Context window | [`claude/tools/context-window.md`](../../../claude/tools/context-window.md) |
+| Prompt caching, Model config | [`claude/tools/prompt-caching.md`](../../../claude/tools/prompt-caching.md) |
+| Hooks, Hooks guide | [`claude/tools/hooks.md`](../../../claude/tools/hooks.md) |
+| Tools reference | [`claude/tools/tools-reference.md`](../../../claude/tools/tools-reference.md) |
+| Sub-agents | [`claude/tools/subagents.md`](../../../claude/tools/subagents.md) |
+| Skills | [`claude/tools/skills.md`](../../../claude/tools/skills.md) |
+| Slash commands, Commands | [`claude/slash-commands/built-in.md`](../../../claude/slash-commands/built-in.md) |
+| Advanced setup, Authentication, Network config | [`claude/setup/`](../../../claude/setup/) |
+| VS Code | [`claude/setup/vs-code.md`](../../../claude/setup/vs-code.md) |
 
-17. **[Common workflows](https://code.claude.com/docs/en/common-workflows)** — concrete recipes; some may slot into `shared/workflows/`.
-18. **[Code Review](https://code.claude.com/docs/en/code-review)** — `/code-review` is already in the skill list; doc covers the deeper surface.
-19. **[Sandboxing](https://code.claude.com/docs/en/sandboxing)** + **[Sandbox environments](https://code.claude.com/docs/en/sandbox-environments)** — relevant when running risky commands; **OS-specific** (Seatbelt on macOS, bubblewrap on Linux/WSL2 — note: native Windows has neither).
-20. **[CLI reference](https://code.claude.com/docs/en/cli-reference)** + **[Interactive mode](https://code.claude.com/docs/en/interactive-mode)** — reference material; skim, don't deep-read.
+## Next gaps, in order
 
-## Tier 4 — defer / out of scope for now
+### 1. Artifacts
 
-- **[Routines](https://code.claude.com/docs/en/routines)**, **[GitHub Actions](https://code.claude.com/docs/en/github-actions)** — read once we have a project that benefits from scheduled or PR-triggered Claude runs.
-- **[Desktop](https://code.claude.com/docs/en/desktop)**, **[Web](https://code.claude.com/docs/en/claude-code-on-the-web)**, Chrome extension, Computer use, Slack — different surfaces; revisit if/when adopted.
-- **[Devcontainer](https://code.claude.com/docs/en/devcontainer)** — relevant if/when a client project ships with one.
-- **Agent SDK** (on `platform.claude.com`) — only relevant when building a custom agent on top of Claude Code. Defer until that's an actual goal.
-- **All enterprise pages** (IAM, Team, Admin setup, Bedrock/Vertex, Corporate proxy, GHES) — out of scope for solo/personal use.
-- **[Discover plugins](https://code.claude.com/docs/en/discover-plugins)** — quick skim later to see if any community plugins are worth adopting.
+The largest single hole. `Artifact` appears in the tools reference as a tool and nowhere else, but the surface around it is substantial: published pages, Artifact types, design systems, runtime capabilities, the shared artifact database, and comment threads. Nothing in the playbook says when publishing a page beats writing a file, which is the decision that actually comes up.
 
-## Cross-OS reminder
+Needs its own issue, and probably its own doc rather than a section bolted onto the tools reference.
 
-When we get to Tier 1 + Tier 2 deep dives, capture Windows-specific notes for: install (PowerShell/CMD), Bash tool dependency on Git for Windows, sandboxing differences (Seatbelt vs. bubblewrap vs. none on native Windows), and path conventions in `settings.json` / `CLAUDE.md`.
+### 2. MCP
 
-## Suggested next issues
+[MCP](https://code.claude.com/docs/en/mcp) is referenced from several docs but never distilled. Deferred originally because there was no client project needing it; that reasoning expires the moment one does. The context cost of a connected server is the part worth capturing — it's a per-session tax, and the tool-search behaviour that offsets it is already covered under prompt caching.
 
-- Tier 1 deep dive → `claude/config/` (memory, settings, permissions, permission modes), `claude/tools/` (tools, hooks, context window, prompt caching), `claude/slash-commands/` (slash commands).
-- Tier 2 deep dive → `claude/setup/` (cross-OS install + auth + IDE), `claude/tools/` (subagents, skills), and `shared/workflows/` (manage sessions, prompt library extractions).
-- Tier 3 → mostly contributes to `claude/workflows/` and `shared/workflows/`.
-- Sister site → breadth pass on `platform.claude.com` (Agent SDK + API + prompt engineering) → feeds `shared/principles/`.
+### 3. Agent teams and workflows
+
+[Agent teams](https://code.claude.com/docs/en/agent-teams) and [workflows](https://code.claude.com/docs/en/workflows) didn't exist when the original sweep ran. Both bear on parallel work, which [`claude/workflows/parallel-with-forks.md`](../../../claude/workflows/parallel-with-forks.md) covers only via forks and subagents. Workflow fan-out has its own prompt-cache behaviour, already noted in the caching doc.
+
+### 4. Best practices
+
+[Best practices](https://code.claude.com/docs/en/best-practices) is Anthropic's own framing. Worth a read specifically to check it against [`shared/principles/`](../../../shared/principles/) — the value is in the disagreements, not the overlaps.
+
+## Deliberately out of scope
+
+Revisit only if the triggering condition becomes true.
+
+| Area | Condition to revisit |
+| --- | --- |
+| Routines, scheduled tasks, GitHub Actions, GitLab CI | A project that benefits from scheduled or PR-triggered runs. `/schedule` and `/loop` are already in the command reference. |
+| Desktop, web, Chrome, Slack, computer use | Adopting that surface. Partly covered already — mobility commands are in the command reference. |
+| Devcontainer | A client project that ships one. |
+| Agent SDK | Building a custom agent on Claude Code. |
+| Enterprise (IAM, Team, admin, Bedrock, Google Cloud, Foundry, proxies, GHES) | Out of scope for solo work. Provider-specific caveats get captured inline where they affect a documented behaviour, not as standalone docs. |
+| JetBrains | Out of scope — VS Code only. |
+
+## Cross-OS debt
+
+The original sweep flagged Windows specifics to capture during deep dives. Status:
+
+- **Done:** install paths (PowerShell/CMD), Bash tool's dependency on Git for Windows, managed-settings paths, sandbox differences (Seatbelt vs. bubblewrap vs. none on native Windows), symlink elevation for `AGENTS.md`.
+- **Open:** nothing known. The Windows VM has not been exercised against the current playbook since the refresh — treat unflagged Windows claims as verified by reading, not by running.
