@@ -19,6 +19,7 @@ Checklists to run when preparing a new context.
 
 - **[`new-machine.md`](project-setup/new-machine.md)** — once per machine. Install, authenticate, drop personal `~/.claude/settings.json`, install VS Code extension, verify. Includes cross-machine sync reality.
 - **[`new-project.md`](project-setup/new-project.md)** — once per project. The three things that matter (memory, permissions, plan-mode default), defer-until-friction matrix, pre-flight checklist.
+- **[`setting-up-from-another-project.md`](project-setup/setting-up-from-another-project.md)** — the agent-runnable version of the above, for when you point an agent at this playbook from inside another repo.
 
 ### [`workflows/`](workflows/)
 
@@ -28,3 +29,4 @@ Reusable patterns. Each readable in 60 seconds before starting a task that fits.
 - **[`research-then-edit.md`](workflows/research-then-edit.md)** — read-only subagent reads; you edit in main.
 - **[`diff-review-cycle.md`](workflows/diff-review-cycle.md)** — the before-you-ship loop.
 - **[`long-task-with-compact.md`](workflows/long-task-with-compact.md)** — token-budget management for long sessions.
+- **[`doc-freshness.md`](workflows/doc-freshness.md)** — stamp convention + refresh pass for keeping these docs honest.

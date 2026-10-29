@@ -1,3 +1,10 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/memory
+---
+
 # Memory: CLAUDE.md and auto memory
 
 How Claude carries knowledge across sessions. Distilled from `https://code.claude.com/docs/en/memory` (fetched via paste; verify against source).
@@ -96,7 +103,7 @@ Set `CLAUDE_CODE_NEW_INIT=1` to enable an interactive multi-phase flow that also
 
 ## Auto memory
 
-Auto memory is Claude writing notes for itself across sessions. Requires **Claude Code v2.1.59+** (`claude --version` to check). On by default.
+Auto memory is Claude writing notes for itself across sessions. On by default.
 
 ### Location
 
@@ -109,7 +116,11 @@ Auto memory is Claude writing notes for itself across sessions. Requires **Claud
 └── ...
 ```
 
-> Open question to verify on real systems: the docs say the path is "derived from the git repository," but the actual dir name in practice currently looks path-encoded (e.g. `-Users-ulenuse-developer-...`). Check whether two checkouts of the same repo at different paths share a memory dir or get separate ones — this is what determines whether memory survives moving a repo between machines.
+**Resolved** (checked on v2.1.308): the `<project>` segment is path-encoded from the **repo root**, not from your CWD — e.g. `-Users-you-developer-my-project`. So the docs' "derived from the git repository" holds for the case they mean: every worktree and subdirectory of one checkout shares a single memory dir. But two checkouts of the same repo at *different paths* get different dirs, and so does the same repo after you move it.
+
+To pin the name, set `CLAUDE_CODE_PROJECT_DIR_NAME` alongside `CLAUDE_CONFIG_DIR` (v2.1.234+). Claude Code then uses that literal name under `<config dir>/projects/` whatever repo you launch in, so every project started with that config dir shares one memory dir.
+
+Note what this does and doesn't buy you. Memory files are **not** synced across machines by Claude Code — that's true regardless. A pinned name only guarantees that if *you* sync the directory (or point `CLAUDE_CONFIG_DIR` at something already synced), both machines resolve to the same folder instead of silently diverging on two path-derived names.
 
 ### Controls
 
@@ -127,6 +138,8 @@ Auto memory is Claude writing notes for itself across sessions. Requires **Claud
 - This 200-line cap is **specific to `MEMORY.md`**. CLAUDE.md has no hard limit, just adherence degradation past ~200 lines.
 
 Auto memory files are plain markdown — edit or delete any time. Use `/memory` to browse and open.
+
+When Claude writes a memory file that starts with YAML frontmatter, Claude Code stamps the write time into a `modified` field as an ISO 8601 timestamp — so both you and Claude can see how current a given fact is on read-back.
 
 ## `/memory` command
 
@@ -171,7 +184,7 @@ CLI flag worth knowing: `--setting-sources` (excluding `local` skips `CLAUDE.loc
 - **Managed policy path differs by OS** (table above).
 - **Windows symlinks need elevation.** Use `@AGENTS.md` import instead of `ln -s`.
 - User and project paths (`~/.claude/CLAUDE.md`, `./.claude/CLAUDE.md`, etc.) work the same on both — just remember `~` resolves to the OS-specific home.
-- Auto memory is **machine-local**. Worktrees of the same repo on the same machine share; the macOS host and the Windows VM each get their own.
+- Auto memory is **machine-local** — Claude Code never syncs it. Worktrees and subdirs of one checkout share a dir; the macOS host and the Windows VM each get their own, and the path-derived names won't even match. If you want them to line up, pin `CLAUDE_CODE_PROJECT_DIR_NAME` on both (see above) and sync the folder yourself.
 
 ## Practical applications for this repo
 

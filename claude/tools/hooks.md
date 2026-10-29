@@ -1,3 +1,11 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/hooks
+  - https://code.claude.com/docs/en/hooks-guide
+---
+
 # Hooks reference
 
 User-defined shell commands, HTTP endpoints, or LLM prompts that fire automatically at lifecycle points. The enforcement and observability layer above `CLAUDE.md` — encodes "from now on, when X happens, do Y" in a way memory and preferences can't. Distilled from `https://code.claude.com/docs/en/hooks`.
@@ -63,7 +71,7 @@ Managed admins can use `allowManagedHooksOnly` to block user/project/plugin hook
 | --- | --- | --- |
 | `UserPromptSubmit` | Prompt submitted, before Claude processes. | Default timeout **30s** (not 600). Stdout added as context. Can block via `decision: "block"`. |
 | `UserPromptExpansion` | User-typed slash command expands. Matcher: command name. | Use for skill/command gating that `PreToolUse Skill` misses. |
-| `Stop` | Claude finishes responding (not on interrupt). | `background_tasks` + `session_crons` arrays (v2.1.145+) for distinguishing "done" from "waiting on background work". `decision: "block"` keeps going. Use `additionalContext` for non-error feedback. |
+| `Stop` | Claude finishes responding (not on interrupt). | `background_tasks` + `session_crons` arrays for distinguishing "done" from "waiting on background work". `decision: "block"` keeps going. Use `additionalContext` for non-error feedback. |
 | `StopFailure` | Turn ends due to API error. Matcher: `rate_limit` / `overloaded` / `authentication_failed` / `billing_error` / etc. | Output ignored. Logging / alerting only. |
 | `TeammateIdle` | Agent-team teammate about to go idle. | Exit 2 = teammate continues with feedback. JSON `{continue: false}` stops it. |
 | `PreCompact` / `PostCompact` | Before/after compaction. Matcher: `manual` / `auto`. | PreCompact can block. Blocking auto-compact that fired to recover from context-limit error surfaces the underlying API error. |
@@ -291,7 +299,7 @@ Instead of exit codes, exit 0 and print JSON to stdout for finer control. **Pick
 | `stopReason` | — | Message shown to user when `continue: false`. Not shown to Claude. |
 | `suppressOutput` | `false` | Hides stdout from transcript. Stays in debug log. |
 | `systemMessage` | — | Warning to user. |
-| `terminalSequence` | — | Allowlisted escape sequence (OSC 0/1/2/9/99/777, BEL) for desktop notifications, window titles, bell. Use instead of writing to `/dev/tty` (unavailable to hooks). v2.1.141+. |
+| `terminalSequence` | — | Allowlisted escape sequence (OSC 0/1/2/9/99/777, BEL) for desktop notifications, window titles, bell. Use instead of writing to `/dev/tty` (unavailable to hooks). |
 
 To stop Claude entirely regardless of event:
 ```json
@@ -346,7 +354,7 @@ The most flexible event. Four outcomes:
 | `"allow"` | Skip permission prompt. Deny/ask rules **still apply**. |
 | `"deny"` | Block the call. |
 | `"ask"` | Show user a permission prompt. Dialog includes `[User]` / `[Project]` / `[Plugin]` / `[Local]` label so user knows where ask came from. |
-| `"defer"` | **For SDK/headless only.** Exits session gracefully with `stop_reason: "tool_deferred"` so the calling process can collect input through its own UI, then resume. Logged-and-ignored in interactive mode. v2.1.89+. |
+| `"defer"` | **For SDK/headless only.** Exits session gracefully with `stop_reason: "tool_deferred"` so the calling process can collect input through its own UI, then resume. Logged-and-ignored in interactive mode. |
 
 Multiple hook precedence: `deny` > `defer` > `ask` > `allow`.
 
@@ -387,7 +395,7 @@ Stdout adds to context directly — no JSON needed. JSON unlocks more:
 
 Both honor the 8-consecutive-continuation cap and the `stop_hook_active` input flag.
 
-`background_tasks` / `session_crons` arrays (v2.1.145+) help distinguish:
+`background_tasks` / `session_crons` arrays help distinguish:
 - Session is done → empty arrays.
 - Session paused waiting for background work → entries describe what's still running.
 
@@ -482,7 +490,7 @@ Set `"shell": "powershell"` on the individual hook — hooks spawn PowerShell di
 
 For exec form on Windows: see the **`.cmd` / `.bat` shim gotcha** above. Use `node` + script-path pattern, or shell form.
 
-### macOS / Linux session isolation (v2.1.139+)
+### macOS / Linux session isolation
 
 Command hooks run in their own session **without a controlling terminal**. Can't open `/dev/tty` or send escape sequences directly. Use:
 - `systemMessage` JSON field to surface a message to the user.

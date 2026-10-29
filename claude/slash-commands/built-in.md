@@ -1,3 +1,11 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/commands
+  - https://code.claude.com/docs/en/slash-commands
+---
+
 # Built-in commands + bundled skills
 
 Reference for the commands typed with `/` at the start of a message. Distilled from `https://code.claude.com/docs/en/commands`.
@@ -35,6 +43,7 @@ The official doc groups commands by where they fit in a session. This is the mos
 - `/effort [low/medium/high/xhigh/max/ultracode|auto]` — adjust reasoning. `auto` resets to model default. Immediate effect (doesn't wait for current response).
 - `/context [all]` — visualize what's in context as a colored grid. Optimization suggestions for context-heavy tools, memory bloat.
 - `/compact [instructions]` — free context by summarizing. Pass focus instructions to keep what matters. See `../tools/context-window.md` for what survives.
+- `/autocompact [tokens]` — set how full the window gets before the automatic pass runs, e.g. `/autocompact 500k`. Raise it to delay compaction, lower it to compact earlier and keep turns cheap.
 - `/btw <question>` — quick side question that doesn't add to conversation history.
 
 ### Parallel work
@@ -43,22 +52,22 @@ The official doc groups commands by where they fit in a session. This is the mos
 - `/tasks` (alias `/bashes`) — view background processes.
 - `/background [prompt]` (alias `/bg`) — detach session to run as a background agent, freeing your terminal. `claude agents` to monitor.
 - `/batch <instruction>` **(Skill)** — decompose change into 5-30 independent units, one background subagent per unit in an isolated worktree.
-- `/fork <directive>` (v2.1.161+) — spawn a forked subagent that inherits the full conversation. Result returns when it finishes. (Before v2.1.161, `/fork` aliased `/branch`.)
+- `/fork <directive>` — spawn a forked subagent that inherits the full conversation. Result returns when it finishes.
 - `/branch [name]` — branch the conversation at this point. Switches you into the branch; original recoverable via `/resume`.
 
 ### Before you ship
 
 - `/diff` — interactive diff viewer. Left/right between current git diff and individual Claude turns. Up/down to browse files.
 - `/code-review [low/medium/high/xhigh/max/ultra] [--fix] [--comment] [target]` **(Skill)** — review current diff for bugs + cleanups. `--fix` applies; `--comment` posts as inline GitHub PR comments; `ultra` runs deep cloud review.
-- `/simplify [target]` **(Skill, v2.1.154+)** — cleanup-only review (no bug hunting). 4 parallel agents.
+- `/simplify [target]` **(Skill)** — cleanup-only review (no bug hunting). 4 parallel agents.
 - `/review [PR]` — same engine as `/code-review`, applied to a GitHub PR. No args = list open PRs.
 - `/security-review` — analyze pending changes for vulnerabilities (injection, auth, data exposure).
-- `/verify` **(Skill, v2.1.145+)** — build + run + observe your app to confirm a change works. Not just tests.
+- `/verify` **(Skill)** — build + run + observe your app to confirm a change works. Not just tests.
 
 ### Between sessions
 
 - `/clear [name]` (aliases `/reset`, `/new`) — start a new conversation with empty context. Previous conversation stays available via `/resume`. Pass a name to label the previous in the picker.
-- `/resume [session]` (alias `/continue`) — resume by ID/name, or open picker. Background sessions appear marked `bg` (v2.1.144+).
+- `/resume [session]` (alias `/continue`) — resume by ID/name, or open picker. Background sessions appear marked `bg`.
 - `/rename [name]` — rename current session. No name = auto-generate from history.
 - `/teleport` (alias `/tp`) — pull a Claude Code on the web session into this terminal. Needs claude.ai subscription.
 - `/remote-control` (alias `/rc`) — make this session available for remote control from claude.ai.
@@ -66,7 +75,7 @@ The official doc groups commands by where they fit in a session. This is the mos
 ### When something's wrong
 
 - `/rewind` (aliases `/checkpoint`, `/undo`) — roll code and conversation back to a checkpoint, or summarize from a selected message.
-- `/doctor` — diagnose install/settings. Press `f` to have Claude fix reported issues.
+- `/doctor` **(Skill)** — diagnose install/settings. Press `f` to have Claude fix reported issues. Subcommand `/doctor prompt-audit` (v2.1.283+) audits what's loading into your prompt. Also proposes trims for a checked-in `CLAUDE.md`, cutting what Claude can derive from the codebase (directory layouts, dependency lists, architecture overviews) and keeping pitfalls, rationale, and conventions that differ from tool defaults.
 - `/debug [description]` **(Skill)** — enable debug logging mid-session and analyze.
 - `/feedback [report]` (aliases `/bug`, `/share`) — report a bug with session context attached.
 
@@ -75,12 +84,13 @@ The official doc groups commands by where they fit in a session. This is the mos
 ### Workspace
 
 - `/add-dir <path>` — extend file access to another dir for this session. **Loads skills** from that dir's `.claude/skills/` (covered in `../tools/skills.md`).
-- `/cd <path>` (v2.1.169+) — move the session to a new working directory. **Preserves prompt cache** (appends new CLAUDE.md as a message instead of rebuilding system prompt). Cd permission rules apply (see `../config/permissions.md`).
+- `/cd <path>` — move the session to a new working directory. **Preserves prompt cache** (appends new CLAUDE.md as a message instead of rebuilding system prompt). Cd permission rules apply (see `../config/permissions.md`).
 
 ### Skill management
 
 - `/skills` — list available skills. Sort by token count (`t`). Hide individual skills with `Space` to cycle states, `Enter` to save (writes `skillOverrides` to `.claude/settings.local.json`).
-- `/reload-skills` (v2.1.152+) — re-scan skill/command dirs without restart.
+- `/skill-doctor` (v2.1.252+) — report unused skills and what each costs in context. The companion to `/skills`: that one shows what you *have*, this one shows what you're paying for and not using. Direct context-budget lever — see `../tools/context-window.md`.
+- `/reload-skills` — re-scan skill/command dirs without restart.
 
 ### Plugin management
 
@@ -90,8 +100,8 @@ The official doc groups commands by where they fit in a session. This is the mos
 ### Session info
 
 - `/status` — Settings interface, Status tab. Version, model, account, connectivity. Works while Claude is responding.
-- `/config [key=value ...]` (alias `/settings`) — open Settings interface, or set settings directly. From v2.1.181: `key=value` works. From v2.1.182: named shorthands like `theme=dark`, `model=sonnet`. Also works in `-p` and via Remote Control. `/config --help` lists settable keys.
-- `/usage` (aliases `/cost`, `/stats`) — session cost, plan limits, activity. On Pro/Max/Team/Enterprise: breakdown by skill, subagent, plugin, MCP server.
+- `/config [key=value ...]` (alias `/settings`) — open Settings interface, or set settings directly. `key=value` works, including named shorthands like `theme=dark`, `model=sonnet`. Also works in `-p` and via Remote Control. `/config --help` lists settable keys.
+- `/usage` (aliases `/cost`, `/stats`) — session cost, plan limits, activity. On Pro/Max/Team/Enterprise: breakdown by skill, subagent, plugin, MCP server. Also carries a `Prompt cache (main)` line with hit ratio, miss count, and the likely cause of the last miss (v2.1.251+/v2.1.260+) — see `../tools/prompt-caching.md`.
 - `/hooks` — view configured hooks (read-only browser — see `../tools/hooks.md`).
 - `/recap` — one-line session summary.
 - `/insights` — analyzes your sessions for project areas, interaction patterns, friction points.
@@ -160,7 +170,7 @@ All marked **Skill** above. Recap:
 | `/debug`, `/fewer-permission-prompts` | Diagnostics |
 | `/loop` | Polling / recurring |
 | `/claude-api` | API reference + migration |
-| `/run`, `/verify`, `/run-skill-generator` (v2.1.145+) | App-verification |
+| `/run`, `/verify`, `/run-skill-generator` | App-verification |
 
 `/run-skill-generator` is the standout — it generates a per-project skill at `.claude/skills/run-<name>/` capturing how to build + launch your app. Run once per project; re-run when build process changes.
 

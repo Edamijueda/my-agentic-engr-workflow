@@ -10,6 +10,7 @@ Goal: each doc readable in 60 seconds before starting a task that fits the patte
 - **[`research-then-edit.md`](research-then-edit.md)** — read-only subagent reads, you edit in main. The cheapest token-savings pattern (~15× in typical research).
 - **[`diff-review-cycle.md`](diff-review-cycle.md)** — `/diff` / `/code-review` / `/simplify` / `/rewind` together. The before-you-ship loop.
 - **[`long-task-with-compact.md`](long-task-with-compact.md)** — `/context` / `/compact` / `/clear` / `/rewind` decision tree. Token-budget management for sessions over an hour.
+- **[`doc-freshness.md`](doc-freshness.md)** — the stamp convention and the refresh pass. Run it when returning to the playbook after a gap, before trusting it on a new project.
 
 ## Reading order
 
@@ -19,3 +20,5 @@ If you've never used these workflows:
 2. **research-then-edit** — the lever you'll reach for most often.
 3. **long-task-with-compact** — for when you stay in a session long enough to need it.
 4. **diff-review-cycle** — the closing half before commit/PR.
+
+**doc-freshness** sits outside that order — it's maintenance of this playbook, not of a task. Reach for it when you've been away.

@@ -1,6 +1,13 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/context-window
+---
+
 # Context window: what fills it, what survives compaction
 
-Token budget is the single biggest lever you have for using Claude Code efficiently. Distilled from `https://code.claude.com/docs/en/context` (an interactive visualization page — content here is the prose plus the inline event descriptions).
+Token budget is the single biggest lever you have for using Claude Code efficiently. Distilled from `https://code.claude.com/docs/en/context-window` (an interactive visualization page — content here is the prose plus the inline event descriptions).
 
 ## Mental model
 
@@ -13,7 +20,7 @@ Each session has one **context window** that holds:
 - Tool call outputs (file reads, grep results, command output).
 - Hook output that's explicitly forwarded to Claude.
 
-**Default size: 200K tokens.** Extended context (1M tokens) available on Fable 5, Opus 4.6+, and Sonnet 4.6 — select via the `[1m]` model variant.
+**Default size: 200K tokens.** Extended context (1M tokens) available on all Fable models, Sonnet 5+, Haiku 5.5, Opus 4.6+, and Sonnet 4.6 — select via the `[1m]` model variant (`opusplan[1m]` covers both phases of the plan/execute split).
 
 > Two diagnostic commands: `/context` shows the live breakdown by category with suggestions. `/memory` shows which CLAUDE.md and auto-memory files loaded at startup.
 
@@ -71,7 +78,7 @@ For `PostToolUse` hooks specifically: exit code 2 surfaces stderr as an error to
 
 Typing `!git status` runs the command in your shell. Both the command and its output enter context as part of your next message. Useful for grounding Claude in command results without it running the command itself — e.g. paste a build error in via `!cat build.log` and ask "what's going on?" without Claude re-running the build.
 
-Setting `respondToBashCommands: false` adds the output to context without prompting Claude for a response (v2.1.186+).
+Setting `respondToBashCommands: false` adds the output to context without prompting Claude for a response.
 
 ## Subagents — the biggest context-saver
 
@@ -131,7 +138,7 @@ Two consequences:
 | `/clear` between unrelated tasks | Switching domains entirely. Old conversation crowds out the files you need next. |
 | `ENABLE_TOOL_SEARCH=auto` | If MCP schemas eat too much startup budget. Defers full schemas until tools are actually needed. |
 | `claudeMdExcludes` | In monorepos, to skip other teams' CLAUDE.md files. |
-| Extended context (`[1m]` model variant) | When the work genuinely needs a larger window, not a smaller conversation. Fable 5 / Opus 4.6+ / Sonnet 4.6. |
+| Extended context (`[1m]` model variant) | When the work genuinely needs a larger window, not a smaller conversation. Fable / Sonnet 5+ / Haiku 5.5 / Opus 4.6+ / Sonnet 4.6. |
 | Auto-compact | Leave on (default). It's the safety net; the other levers are for *before* you hit it. |
 
 ## Practical applications for this repo

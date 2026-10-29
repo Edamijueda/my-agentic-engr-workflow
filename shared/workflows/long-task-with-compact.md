@@ -1,3 +1,11 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/context-window
+  - https://code.claude.com/docs/en/prompt-caching
+---
+
 # Long task with `/compact`
 
 Token-budget management for sessions that run an hour or more. The four levers: `/context`, `/compact`, `/clear`, `/rewind`.

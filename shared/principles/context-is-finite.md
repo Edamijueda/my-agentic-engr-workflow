@@ -4,7 +4,7 @@ Every token of context costs — time, money, and the agent's attention. What yo
 
 ## Why it's true
 
-Modern coding agents have finite context windows (Claude Code: 200K by default, 1M on some models). That budget is shared across:
+Modern coding agents have finite context windows. That budget is shared across:
 
 - The system prompt and tool definitions.
 - Project context (memory files, path-scoped rules, auto memory).

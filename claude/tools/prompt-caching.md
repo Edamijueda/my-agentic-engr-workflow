@@ -1,3 +1,11 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/prompt-caching
+  - https://code.claude.com/docs/en/model-config
+---
+
 # Prompt caching: what invalidates the cache, what keeps it
 
 Why some session changes are followed by a slow uncached turn, why mid-session edits to `CLAUDE.md` don't take effect, and how to measure the hit rate. Distilled from `https://code.claude.com/docs/en/prompt-caching`.
@@ -26,7 +34,7 @@ Three knobs that aren't part of the request text but **are part of the cache key
 | --- | --- |
 | **Model** | Each model has its own cache. `/model` switch = full recompute. |
 | **Effort level** | Each effort level has its own cache. `/effort` switch = full recompute. Claude Code shows a confirmation dialog before applying mid-session. |
-| **Fast mode** | Toggling fast mode on adds a header that's part of the key. Costs once per conversation. After the first fast-mode turn, toggling fast mode off then back on keeps the cache (v2.1.86+). |
+| **Fast mode** | Toggling fast mode on adds a header that's part of the key. Costs once per conversation. After the first fast-mode turn, toggling fast mode off then back on keeps the cache. |
 
 **`opusplan` quirk:** the model setting resolves to Opus during plan mode and Sonnet during execution, so **each plan-mode toggle is a model switch** = full recompute.
 
@@ -35,10 +43,14 @@ Three knobs that aren't part of the request text but **are part of the cache key
 Next turn = slower + more expensive, then the new prefix is cached.
 
 ### Switching models
-Includes explicit `/model`, the `opusplan` toggle on entering/leaving plan mode, and **automatic Fable 5 fallback to Opus** when a safety classifier flags a request.
+Includes explicit `/model`, the `opusplan` toggle on entering/leaving plan mode, and **automatic content-based fallback** when a safety classifier flags a request. Fallback applies on Fable 5.1, Fable 5, Opus 5.5, Sonnet 5.5, and Opus 5; the session stays on the fallback model until you run `/model`. Set `switchModelsOnFlag: false` to be asked first.
+
+A skill or command whose frontmatter names a different `model` also counts as a switch for that turn.
 
 ### Changing effort level
-Same shape as model switch. Confirmation dialog before applying. A change that resolves to the level already in effect (e.g. setting the default explicitly) skips the dialog and keeps the cache.
+Same shape as model switch on most models, with a confirmation dialog before applying. A change that resolves to the level already in effect (e.g. setting the default explicitly) skips the dialog and keeps the cache.
+
+**Exception worth knowing:** on Opus 5.5, Sonnet 5.5, Haiku 5.5, and Fable 5.1 with an API key or Claude subscription, changing effort **keeps the cache** and applies without asking. Doesn't hold on Bedrock, Google Cloud's Agent Platform, a Claude apps gateway, under `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS`, or with a HIPAA configuration.
 
 ### Turning on fast mode
 Adds a header to the cache key — full re-read. On non-Opus models, enabling fast mode also switches the model, so you eat two invalidations at once. After the first fast-mode turn, the header is sticky: subsequent on/off toggles, the auto fallback to standard speed after a rate limit, and turning it back on later all keep the cache. `/clear` and `/compact` reset this anyway.
@@ -51,7 +63,7 @@ Depends on whether tool definitions are **deferred** or **loaded into the prefix
 | **Deferred** (default on supported models) | Cache stays — additions append after the cache breakpoint. |
 | **In prefix** | Full re-read. |
 
-Tools land in the prefix when: tool search is unavailable (Haiku, Vertex AI, custom `ANTHROPIC_BASE_URL` gateways), the server/tool is marked `alwaysLoad`, or threshold-based loading kept them upfront.
+Tools land in the prefix when: tool search is unavailable (older Google Cloud Agent Platform models, a Microsoft Foundry deployment hosted on Azure that rejects tool search, custom `ANTHROPIC_BASE_URL` gateways), the server/tool is marked `alwaysLoad`, or threshold-based loading kept them upfront.
 
 Sneaky cause: a stdio server's process exits, an HTTP session expires, or a server reconnects automatically after a transient failure — counts as a connect/disconnect.
 
@@ -67,7 +79,7 @@ Depends on what the plugin provides:
 | Skills, commands, agents, hooks, LSP, monitors, themes | Cache survives (append-only). |
 | MCP servers | Same rules as MCP changes above. |
 
-Changes apply on `/reload-plugins` or a new session — **not** at the moment of `/plugin install / enable / disable`. As of v2.1.163, `/reload-plugins` warns if a reload would trigger a full re-read; pass `--force` to apply anyway.
+Changes apply on `/reload-plugins` or a new session — **not** at the moment of `/plugin install / enable / disable`. `/reload-plugins` warns if a reload would trigger a full re-read; pass `--force` to apply anyway.
 
 Disabling a plugin you enabled earlier in the session can hit the **previous prefix's cache** if it's still within TTL — no rebuild.
 
@@ -107,7 +119,7 @@ Nested `CLAUDE.md` files in subdirs and rules with `paths:` frontmatter behave d
 > **Practical**: if you change `CLAUDE.md` for an in-progress session to take effect, you need `/clear` or restart. Mid-session memory tweaks are usually a sign the session has run its course.
 
 ### Changing output style
-Same as `CLAUDE.md`: cache safe, but the change doesn't apply until next `/clear` or restart. It's part of the system prompt, baked in at session start.
+Cache safe, and **applies from your next message** — Claude Code delivers the new style as a conversation message, so the system prompt and prior history still read from cache. Before v2.1.251 it kept the cache but didn't apply until `/clear` or a restart.
 
 ### Changing permission mode
 Cache safe. Mode switches don't touch the system prompt or tool definitions.
@@ -134,19 +146,49 @@ A **fork** (`/fork`) is different: it inherits the parent's system prompt, tools
 
 ## Cache lifetime
 
-Cache entries expire after a period of inactivity. Each cache hit resets the timer. Two TTLs available:
+Cache entries expire after a period of inactivity. Each cache hit resets the timer. Two TTLs exist: **5 minutes**, and **1 hour** (keeps the cache warm across longer breaks, but bills cache *writes* at a higher rate).
 
-| TTL | Default for |
+### Requests fall into two buckets
+
+TTL is decided per request, and every request lands in one of two fixed buckets:
+
+| Bucket | What's in it |
 | --- | --- |
-| **5 minutes** | API key, Bedrock, Vertex AI, Foundry, Claude Platform on AWS, **subscription using usage credits** |
-| **1 hour** | Claude subscription within plan limits (auto-applied — costs nothing extra since usage is included) |
+| **Main conversation** | Your interactive turns, `-p` runs, Agent SDK turns, plus helpers run inline with them |
+| **Everything else** | Subagents, forks, workflows, in-process teammates, compaction, session titles |
 
-**Override via env vars:**
+Defaults per bucket:
 
-- `ENABLE_PROMPT_CACHING_1H=1` — opt into 1-hour on API/cloud providers (bills cache writes at a higher rate).
-- `FORCE_PROMPT_CACHING_5M=1` — force 5-minute regardless of auth (useful for debugging, or to override a managed-settings 1-hour).
+| Bucket | Subscription, within plan usage | Usage credits / API key / cloud provider |
+| --- | --- | --- |
+| Main conversation | **1 hour** | 5 minutes |
+| Everything else | 5 minutes (except server-controlled helpers, which get 1 hour) | 5 minutes |
 
-On **Bedrock**, cacheable prefix length and 1-hour TTL availability vary by model. If cache token counts stay at zero, check the Bedrock docs for your model + region.
+The subscription case is the one to internalise: your main conversation gets the hour for free because the usage is already included. **Once you tip into usage credits, Claude Code drops you to 5 minutes** — you're billed at that point, and the lower write rate is the cheaper default. That's a silent change in behaviour exactly when you're paying per token.
+
+### Choosing a TTL yourself
+
+Each bucket has its own control. Both take `5m` or `1h`; anything else is ignored. Settings and env vars both need v2.1.242+.
+
+| Bucket | Setting | Env var |
+| --- | --- | --- |
+| Main conversation | `promptCacheTtl` | `CLAUDE_CODE_PROMPT_CACHE_TTL` |
+| Everything else | `subagentPromptCacheTtl` | `CLAUDE_CODE_SUBAGENT_PROMPT_CACHE_TTL` |
+
+**On an API key or cloud provider, set `promptCacheTtl: "1h"`** — you don't get the hour by default there. Requests outside the main conversation stay at 5 minutes until you set the second control too.
+
+Precedence, first match wins:
+
+1. `FORCE_PROMPT_CACHING_5M=1` — forces 5m on both buckets
+2. The bucket's env var
+3. The bucket's setting
+4. `cacheTtl` in a subagent's `experimental` frontmatter (v2.1.248+; a `1h` here is ignored while a subscription is on usage credits)
+5. `ENABLE_PROMPT_CACHING_1H=1` — requests 1h for both buckets
+6. The bucket default above
+
+To confirm what you actually got: `claude -p "hello" --output-format json` and read `usage.cache_creation` — 1-hour writes appear under `ephemeral_1h_input_tokens`, 5-minute under `ephemeral_5m_input_tokens`.
+
+Through a gateway, part of the 1-hour request travels in the `anthropic-beta` header, so the gateway must forward it unchanged. On **Bedrock**, cacheable prefix length and 1-hour availability vary by model — if cache token counts stay at zero, check the Bedrock docs for your model + region.
 
 ## Cache scope (the per-machine, per-directory gotcha)
 
@@ -175,7 +217,8 @@ Every API response returns two token counts:
 
 Two ways to watch:
 
-- **Statusline script** reading the `current_usage` object — live view per session. See `statusline` docs.
+- **`/usage`** — per-session summary. After the main conversation's first response it adds a **`Prompt cache (main)`** line showing hit ratio, miss count, and whether the cache is warm right now (v2.1.251+). When Claude Code can identify it, the line also names the likely cause of the last miss, e.g. `likely cause: tool definitions changed` (v2.1.260+). This is the fastest answer to "why is this session expensive?"
+- **Statusline script** reading the `current_usage` object — live view per session. The same numbers are available via the `prompt_cache` object. See `statusline` docs.
 - **OpenTelemetry exporter** reports cache read/creation per user + session for org-wide visibility.
 
 ## Disabling the cache (debug only)
@@ -198,7 +241,7 @@ Set in `settings.json` → `env` block, or in managed settings for org-wide.
 | --- | --- |
 | **Pick model + effort at session start.** | Mid-session `/model` or `/effort` = full re-read. |
 | **Don't bounce in and out of plan mode with `opusplan`.** | Each toggle = model switch = invalidation. Use a single mode when iterating. |
-| **Enable fast mode at session start, not mid-task.** | First fast-mode turn costs once. After that, toggles are free (v2.1.86+). |
+| **Enable fast mode at session start, not mid-task.** | First fast-mode turn costs once. After that, toggles are free. |
 | **Edit `CLAUDE.md` between sessions, not during.** | Mid-session edits don't apply anyway. `/clear` or restart is the real cost. |
 | **Use `/rewind` to abandon a bad path, not `/compact`.** | Rewind hits an existing cache entry. Compact builds a new prefix. |
 | **`/compact` at natural task breaks**, not mid-task. | You control when the cost happens. |

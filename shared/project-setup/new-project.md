@@ -1,3 +1,12 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/memory
+  - https://code.claude.com/docs/en/settings
+  - https://code.claude.com/docs/en/permissions
+---
+
 # Starting a new project — checklist
 
 What to do when you open a coding agent on a project for the first time. Agent-agnostic at the top; Claude-specific implementation links out to `claude/`.
@@ -235,7 +244,7 @@ Easy to over-engineer first-session setup. Skip until proven necessary:
 - **Custom subagents.** Built-in `Explore` and `Plan` cover most research needs. Write a custom subagent when you've delegated the same kind of task 3+ times.
 - **Hooks.** Add when memory is being ignored on a critical rule, not preemptively.
 - **MCP servers.** Add when the project needs Jira/Drive/etc., not as a generic "agent should have all tools".
-- **`auto` mode.** Powerful but a research preview; the classifier blocks many git-rewriting commands by default. Use `plan` or `acceptEdits` until you understand what auto blocks in your workflow.
+- **`auto` mode.** The default starting mode, so you're already in it unless you changed it. A classifier vets each action and blocks most git-rewriting commands outright. It reduces prompts; it does not guarantee safety, so your `deny` rules remain the only hard guarantee. Reach for `plan` when you want to review the approach before any edit — not as a safety net. See [`../../claude/config/permissions.md`](../../claude/config/permissions.md).
 - **Plugins.** Many are useful but each adds context and complexity. Add `skill-creator` if you start writing custom skills; otherwise wait.
 
 ---

@@ -10,6 +10,7 @@ Personal playbook for working efficiently with coding agents. When starting a ne
 | New project | [`shared/project-setup/new-project.md`](shared/project-setup/new-project.md) |
 | **You are an agent the user pointed at this playbook from inside another project** | **[`shared/project-setup/setting-up-from-another-project.md`](shared/project-setup/setting-up-from-another-project.md)** |
 | Stuck on a task | [`shared/workflows/`](shared/workflows/) — plan-first, research-then-edit, diff-review, long-task-with-compact |
+| **Coming back after weeks away** | **[`shared/workflows/doc-freshness.md`](shared/workflows/doc-freshness.md)** — check what's gone stale before you trust it |
 | Spotted recurring friction | [`claude/workflows/scaffolding-decision.md`](claude/workflows/scaffolding-decision.md) |
 | Want the "why" behind a choice | [`shared/principles/`](shared/principles/) |
 | Specific Claude Code mechanic | [`claude/`](claude/) |
@@ -19,7 +20,7 @@ Personal playbook for working efficiently with coding agents. When starting a ne
 - **[`shared/`](shared/)** — agent-agnostic. Should hold regardless of which coding agent you use.
   - **`principles/`** — context-is-finite, enforcement-vs-influence, durability-ladder, defer-until-friction.
   - **`project-setup/`** — new-machine.md (once per machine), new-project.md (once per project).
-  - **`workflows/`** — plan-first, research-then-edit, diff-review-cycle, long-task-with-compact.
+  - **`workflows/`** — plan-first, research-then-edit, diff-review-cycle, long-task-with-compact, doc-freshness.
 - **[`claude/`](claude/)** — Claude Code specifics.
   - **`setup/`** — install, authentication, vs-code.
   - **`config/`** — memory, settings, permissions.
@@ -31,6 +32,19 @@ Personal playbook for working efficiently with coding agents. When starting a ne
 ## Adding a new agent
 
 If you start using another coding agent (Cursor, Aider, etc.), add a new top-level dir for it (e.g. `cursor/`). Anything cross-cutting between agents gets promoted into `shared/`.
+
+## Freshness
+
+Docs that assert product facts carry a stamp in their frontmatter:
+
+```yaml
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/prompt-caching
+```
+
+Treat a doc whose `verified_against` is well behind your installed `claude --version` as unverified rather than wrong. [`shared/workflows/doc-freshness.md`](shared/workflows/doc-freshness.md) has the convention and the pass for clearing it.
 
 ## See also
 

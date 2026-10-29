@@ -1,3 +1,10 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/authentication
+---
+
 # Authentication
 
 How Claude Code knows who you are — login methods, credential storage per OS, precedence when multiple credentials are present, long-lived tokens for CI. Distilled from `https://code.claude.com/docs/en/authentication`.
@@ -12,7 +19,7 @@ Six possible authentication paths. **Free Claude.ai plan does NOT include Claude
 | Claude for Teams | Smaller team with self-service billing + admin tools |
 | Claude for Enterprise | Larger org needing SSO, domain capture, RBAC, compliance, managed policy |
 | Claude Console | API-based billing, admin invites users with roles |
-| Amazon Bedrock / Google Vertex AI / Microsoft Foundry | Org already on that cloud — env-var-driven, no browser |
+| Amazon Bedrock / Google Cloud's Agent Platform / Microsoft Foundry | Org already on that cloud — env-var-driven, no browser |
 | Long-lived OAuth token | CI / scripts / containers |
 
 ## First login

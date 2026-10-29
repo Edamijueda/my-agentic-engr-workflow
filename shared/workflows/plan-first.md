@@ -1,3 +1,10 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/permission-modes
+---
+
 # Plan-first
 
 The agent describes what it will do **before** it edits. You approve, refine, or redirect. The single biggest "stay in control" lever.
@@ -29,7 +36,7 @@ If you're not sure, plan. The friction of approving the plan is the point — it
 6. **Accept into the right mode.** The accept-into menu offers:
    - **default** — review each edit individually. Most cautious.
    - **acceptEdits** — agent edits, you review after. The most common choice for non-prod work.
-   - **auto** — classifier supervises tool calls (research preview). Locked-down environments only.
+   - **auto** — classifier supervises tool calls. The default starting mode now, so this is usually "carry on as you were".
 
 ## Accept-into decision
 

@@ -1,3 +1,10 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/sub-agents
+---
+
 # Parallel approaches with `/fork`
 
 Try multiple approaches from the same starting point. Forks **share the parent's prompt cache** — cheap. Each fork returns a summary back to the main conversation; you compare and pick.
@@ -68,7 +75,7 @@ Fork returns a summary; you keep coding.
 
 ## Enabling fork mode
 
-`CLAUDE_CODE_FORK_SUBAGENT=1` enables explicitly (interactive, headless, SDK). `=0` disables everywhere. Default-on from v2.1.161+.
+`CLAUDE_CODE_FORK_SUBAGENT=1` enables explicitly (interactive, headless, SDK). `=0` disables everywhere. Default-on.
 
 When fork mode is enabled, **every subagent spawn runs in background**, not just forks. Set `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` for synchronous spawns instead.
 
@@ -83,7 +90,7 @@ When fork mode is enabled, **every subagent spawn runs in background**, not just
 ## Cache + permission notes
 
 - **Prompt cache shared with main.** First fork request is cache-cheap; subsequent are normally cached. Switching `/model` or `/effort` in the fork would invalidate.
-- **Permission prompts surface in your main terminal** while forks run (v2.1.186+), naming which fork is asking. Esc denies one tool call without stopping the fork.
+- **Permission prompts surface in your main terminal** while forks run, naming which fork is asking. Esc denies one tool call without stopping the fork.
 
 ## See also
 

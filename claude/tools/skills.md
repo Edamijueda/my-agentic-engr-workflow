@@ -1,3 +1,10 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/skills
+---
+
 # Skills
 
 How to package repeatable workflows so Claude (or you) can invoke them with `/name`. Distilled from `https://code.claude.com/docs/en/skills`.
@@ -253,12 +260,12 @@ These appear as commands and work like user skills. Disable globally with `disab
 | Skill | What it does |
 | --- | --- |
 | `/code-review [low/medium/high/xhigh/max/ultra] [--fix] [--comment]` | Review current diff for bugs + reuse/simplify/efficiency cleanups. `--fix` applies findings. `ultra` runs deep cloud review. |
-| `/simplify [target]` | Cleanup-only review (no bug hunting). 4 parallel agents: reuse, simplification, efficiency, abstraction level. v2.1.154+. |
+| `/simplify [target]` | Cleanup-only review (no bug hunting). 4 parallel agents: reuse, simplification, efficiency, abstraction level. |
 | `/debug [description]` | Enable debug logging mid-session and analyze. |
 | `/batch <instruction>` | Decompose large change into 5-30 independent units; spawn background subagent per unit in isolated worktree. |
 | `/loop [interval] [prompt]` | Repeat a prompt on a schedule. Self-paces if no interval. |
 | `/claude-api [migrate|managed-agents-onboard]` | Load Claude API reference for your project's language. Auto-activates on `anthropic` or `@anthropic-ai/sdk` imports. |
-| `/run`, `/verify`, `/run-skill-generator` (v2.1.145+) | Launch and drive your app to verify changes. `/run-skill-generator` records the recipe as a per-project skill at `.claude/skills/run-<name>/`. |
+| `/run`, `/verify`, `/run-skill-generator` | Launch and drive your app to verify changes. `/run-skill-generator` records the recipe as a per-project skill at `.claude/skills/run-<name>/`. |
 | `/fewer-permission-prompts` | Scan transcripts for common read-only Bash + MCP calls; add prioritized allowlist to project `.claude/settings.json`. |
 
 `/run-skill-generator` is the most interesting pattern — it generates a custom skill per project. Run once per project, again if build/launch changes.
@@ -266,7 +273,7 @@ These appear as commands and work like user skills. Disable globally with `disab
 ## `/skills`, `/reload-skills`, `skillOverrides`
 
 - **`/skills`** — list skills, sort by token count (`t`), hide individual skills (`Space` to cycle states, `Enter` to save to `.claude/settings.local.json`).
-- **`/reload-skills`** (v2.1.152+) — re-scan skill + command directories so skills added/changed on disk during the session work without restart.
+- **`/reload-skills`** — re-scan skill + command directories so skills added/changed on disk during the session work without restart.
 
 `skillOverrides` in settings controls per-skill visibility without editing `SKILL.md`:
 

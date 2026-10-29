@@ -1,3 +1,11 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/setup
+  - https://code.claude.com/docs/en/network-config
+---
+
 # Install + update Claude Code
 
 Cross-OS install playbook + update behavior + version pinning + binary integrity. Distilled from `https://code.claude.com/docs/en/setup`.

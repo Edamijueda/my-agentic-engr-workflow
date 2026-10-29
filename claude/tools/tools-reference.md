@@ -1,3 +1,10 @@
+---
+verified_against: 2.1.308
+verified_on: 2026-10-27
+sources:
+  - https://code.claude.com/docs/en/tools-reference
+---
+
 # Tools reference
 
 What Claude can call, with the canonical names used in permission rules, subagent + skill frontmatter, hook matchers, and CLI flags. Distilled from `https://code.claude.com/docs/en/tools-reference`.
@@ -38,7 +45,7 @@ Grouped by purpose. **P** = permission required.
 | --- | --- | --- |
 | `Bash` | Yes | Each command in a fresh process. `cd` carries over within project + `--add-dir` scopes. |
 | `PowerShell` | Yes | Native PowerShell. Cross-OS gating below. |
-| `Monitor` (v2.1.98+) | Yes | Background watch — feeds each output line to Claude. Uses Bash permission rules. |
+| `Monitor` | Yes | Background watch — feeds each output line to Claude. Uses Bash permission rules. |
 
 ### Web
 
@@ -70,7 +77,7 @@ Grouped by purpose. **P** = permission required.
 | --- | --- | --- |
 | `TaskCreate` / `TaskGet` / `TaskList` / `TaskUpdate` / `TaskStop` | No | Session task checklist. |
 | `TaskOutput` | No | **Deprecated** — `Read` the task's output file path instead. |
-| `TodoWrite` (legacy) | No | **Disabled by default v2.1.142+** in favor of `Task*`. Re-enable with `CLAUDE_CODE_ENABLE_TASKS=0`. |
+| `TodoWrite` (legacy) | No | **Disabled by default** in favor of `Task*`. Re-enable with `CLAUDE_CODE_ENABLE_TASKS=0`. |
 
 ### Scheduling
 
@@ -87,7 +94,7 @@ Grouped by purpose. **P** = permission required.
 | `ListMcpResourcesTool` | No | List resources from connected MCP servers. |
 | `ReadMcpResourceTool` | No | Read a specific MCP resource by URI. |
 | `ToolSearch` | No | Loads deferred MCP tools when tool search is enabled. |
-| `WaitForMcpServers` (v2.1.142+) | No | Wait for MCP servers still connecting. Only when tool search is disabled. |
+| `WaitForMcpServers` | No | Wait for MCP servers still connecting. Only when tool search is disabled. |
 
 ### Notifications
 
@@ -216,7 +223,7 @@ Direct calls: jump-to-definition, find references, type info, list symbols, sear
 
 **Inactive until you install a code-intelligence plugin** for your language. Plugin bundles config; language server binary installed separately.
 
-### Monitor (v2.1.98+)
+### Monitor
 
 Watch something in the background, react to changes mid-conversation. Use cases: tail log + flag errors, poll a PR or CI job, watch a directory, track a long-running script.
 
@@ -308,7 +315,7 @@ Anthropic's web search backend. Returns titles + URLs only — **no page fetch**
 | --- | --- |
 | Claude API | Yes |
 | Microsoft Foundry | Yes |
-| Google Vertex AI | Only with Claude 4 models (Opus/Sonnet/Haiku) |
+| Google Cloud's Agent Platform | Only with Claude 4 models (Opus/Sonnet/Haiku) |
 | Amazon Bedrock | **No** — Bedrock doesn't expose the server-side web search tool |
 
 ### Agent
@@ -329,7 +336,7 @@ Same tool also launches **forks** (when fork mode is enabled): forks inherit the
 **Permission prompt behavior**:
 
 - **Foreground subagents**: same prompts you'd see in the main conversation, at the moment of the call.
-- **Background subagents (v2.1.186+)**: prompt in main session, naming which subagent. Esc denies that one call without stopping the subagent. **Before v2.1.186**: background subagents auto-denied anything that would prompt.
+- **Background subagents**: prompt in main session, naming which subagent. Esc denies that one call without stopping the subagent.
 
 To limit subagent reach: narrow `tools`, leave Bash off, or set deny rules in settings.
 
@@ -367,7 +374,7 @@ To limit subagent reach: narrow `tools`, leave Bash off, or set deny rules in se
 | `ShareOnboardingGuide` |
 | `Artifact` (also requires Team/Enterprise plan) |
 
-WebSearch availability: Claude API + Foundry yes, Vertex Claude 4 only, **Bedrock no**.
+WebSearch availability: Claude API + Foundry yes, Google Cloud's Agent Platform Claude 4 only, **Bedrock no**.
 
 ## Environment variables affecting tool behavior
 
@@ -382,7 +389,7 @@ WebSearch availability: Claude API + Foundry yes, Vertex Claude 4 only, **Bedroc
 | `CLAUDE_CODE_USE_POWERSHELL_TOOL` | PowerShell | `=1` enables; on Windows `=0` opts out. |
 | `CLAUDE_CODE_POWERSHELL_RESPECT_EXECUTION_POLICY` | PowerShell | `=1` respects effective machine policy instead of `-ExecutionPolicy Bypass`. |
 | `DISABLE_TELEMETRY`, `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | Monitor | Disables the Monitor tool. |
-| `CLAUDE_CODE_ENABLE_TASKS` | TodoWrite / Task* | `=0` re-enables legacy `TodoWrite` (off by default v2.1.142+). |
+| `CLAUDE_CODE_ENABLE_TASKS` | TodoWrite / Task* | `=0` re-enables legacy `TodoWrite` (off by default). |
 
 ## Cross-OS notes
 
