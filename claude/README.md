@@ -42,6 +42,7 @@ How Claude Code's engine works under the hood.
 Claude-specific patterns. Companion to [`../shared/workflows/`](../shared/workflows/) (agent-agnostic).
 
 - **[`scaffolding-decision.md`](workflows/scaffolding-decision.md)** — you spotted friction; which mechanism do you reach for?
+- **[`verification-ladder.md`](workflows/verification-ladder.md)** — prompt / `/goal` / `Stop` hook / fresh reviewer, and when each is the right rung.
 - **[`memory-curation.md`](workflows/memory-curation.md)** — maintaining `CLAUDE.md` over time.
 - **[`custom-subagent-creation.md`](workflows/custom-subagent-creation.md)** — graduating from built-in `Explore`.
 - **[`parallel-with-forks.md`](workflows/parallel-with-forks.md)** — `/fork` for cheap A/B exploration.

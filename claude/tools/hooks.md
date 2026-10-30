@@ -393,7 +393,9 @@ Stdout adds to context directly — no JSON needed. JSON unlocks more:
 | `decision: "block"` + `reason` | Hook error / continuation feedback | Hard "you can't stop yet" — e.g. tests must pass. |
 | `hookSpecificOutput.additionalContext` | Hook feedback (clean) | "Working as designed" guidance — e.g. "run tests before finishing". |
 
-Both honor the 8-consecutive-continuation cap and the `stop_hook_active` input flag.
+Both honor the `stop_hook_active` input flag and the **8-consecutive-block cap**: after eight blocks in a row with no tool call in between, Claude Code overrides the next block and lets the turn end. Without that, a check that can never pass would trap the session. Raise the cap with `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`.
+
+Exit 2 is what blocks; **stderr becomes the reason Claude sees** (stderr from a hook that exits 0 is discarded), so redirect the check's output there — `pnpm tsc --noEmit 1>&2 || exit 2`.
 
 `background_tasks` / `session_crons` arrays help distinguish:
 - Session is done → empty arrays.

@@ -16,6 +16,7 @@ Agent-agnostic on purpose. Claude Code is the agent in use today and [`claude/`]
 | New project | [`shared/project-setup/new-project.md`](shared/project-setup/new-project.md) |
 | **You are an agent the user pointed at this playbook from inside another project** | **[`shared/project-setup/setting-up-from-another-project.md`](shared/project-setup/setting-up-from-another-project.md)** |
 | Stuck on a task | [`shared/workflows/`](shared/workflows/) — plan-first, research-then-edit, diff-review, long-task-with-compact |
+| Agent says it's done and you're not convinced | [`shared/principles/checks-over-claims.md`](shared/principles/checks-over-claims.md) |
 | **Coming back after weeks away** | **[`shared/workflows/doc-freshness.md`](shared/workflows/doc-freshness.md)** — check what's gone stale before you trust it |
 | Spotted recurring friction | [`claude/workflows/scaffolding-decision.md`](claude/workflows/scaffolding-decision.md) |
 | Want the "why" behind a choice | [`shared/principles/`](shared/principles/) |
@@ -24,7 +25,7 @@ Agent-agnostic on purpose. Claude Code is the agent in use today and [`claude/`]
 ## Layout
 
 - **[`shared/`](shared/)** — agent-agnostic. Should hold regardless of which coding agent you use.
-  - **`principles/`** — context-is-finite, enforcement-vs-influence, durability-ladder, defer-until-friction.
+  - **`principles/`** — context-is-finite, enforcement-vs-influence, checks-over-claims, durability-ladder, defer-until-friction.
   - **`project-setup/`** — new-machine.md (once per machine), new-project.md (once per project).
   - **`workflows/`** — plan-first, research-then-edit, diff-review-cycle, long-task-with-compact, doc-freshness.
 - **[`claude/`](claude/)** — Claude Code specifics.
@@ -32,7 +33,7 @@ Agent-agnostic on purpose. Claude Code is the agent in use today and [`claude/`]
   - **`config/`** — memory, settings, permissions.
   - **`tools/`** — context-window, prompt-caching, hooks, skills, tools-reference, subagents.
   - **`slash-commands/`** — built-in commands + bundled skills reference.
-  - **`workflows/`** — parallel-with-forks, custom-subagent-creation, scaffolding-decision, memory-curation.
+  - **`workflows/`** — parallel-with-forks, custom-subagent-creation, scaffolding-decision, memory-curation, verification-ladder.
 - **[`research/`](research/)** — scratchpad for raw notes from docs and source material before they get distilled into `shared/` or `claude/`.
 
 ## Adding a new agent

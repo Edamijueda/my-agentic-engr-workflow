@@ -11,7 +11,7 @@ Agent-agnostic on purpose. Claude Code is the agent in use today, but the practi
 ## Layout
 
 - `shared/` — agent-agnostic.
-  - `principles/` — context-is-finite, enforcement-vs-influence, durability-ladder, defer-until-friction.
+  - `principles/` — context-is-finite, enforcement-vs-influence, checks-over-claims, durability-ladder, defer-until-friction.
   - `project-setup/` — new-machine.md, new-project.md.
   - `workflows/` — plan-first, research-then-edit, diff-review-cycle, long-task-with-compact, doc-freshness.
 - `claude/` — Claude Code specifics.
@@ -19,7 +19,7 @@ Agent-agnostic on purpose. Claude Code is the agent in use today, but the practi
   - `config/` — memory, settings, permissions.
   - `tools/` — context-window, prompt-caching, hooks, skills, tools-reference, subagents.
   - `slash-commands/` — built-in commands + bundled skills.
-  - `workflows/` — parallel-with-forks, custom-subagent-creation, scaffolding-decision, memory-curation.
+  - `workflows/` — parallel-with-forks, custom-subagent-creation, scaffolding-decision, memory-curation, verification-ladder.
 - `research/anthropic/` — scratchpad for raw doc notes before they get distilled into `shared/` or `claude/`.
 
 Add a new top-level dir per coding agent as needed (e.g. `cursor/`, `aider/`). Promote cross-cutting findings into `shared/`.

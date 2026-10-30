@@ -104,6 +104,24 @@ Same engine, but applied to a GitHub PR you check out or specify. Combine with `
 
 For changes touching auth, input handling, file uploads, deserialization, or anything that takes user input.
 
+### Reviewing against a spec
+
+When you want the review to check the work against what you asked for, rather than hunt for bugs in general, write the review prompt yourself:
+
+```
+use a subagent to review the rate limiter diff against SPEC.md, check every
+requirement is implemented and the listed edge cases have tests, report gaps
+that affect correctness and skip style
+```
+
+Three parts are doing work here:
+
+- **Name the spec.** Without it the reviewer invents its own standard of done.
+- **Say what counts as a gap** — requirements not implemented, edge cases without tests. That's a checklist, not an invitation to opine.
+- **`skip style`.** Don't drop this. A reviewer asked to find problems will always find *something*; fix every finding and you end up with extra abstraction layers and tests for cases that can't happen. Naming what to ignore is what keeps the output actionable.
+
+Use this when you have a spec, a design doc, or acceptance criteria. For a change with no written target, `/code-review` is the better tool — it has its own notion of what correctness looks like.
+
 ## Common mistakes
 
 - **Skipping `/diff` because you trust the agent.** Pure laziness. The first read catches the silly mistakes that automated review will miss (forgotten debug logs, comments not removed, unrelated changes).
