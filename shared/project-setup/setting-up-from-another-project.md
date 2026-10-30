@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-30
 sources:
   - https://code.claude.com/docs/en/memory
   - https://code.claude.com/docs/en/settings
@@ -63,12 +63,6 @@ Write a brief one-paragraph summary of what you found before proceeding.
 - [Error handling patterns observed]
 - [Test layout — co-located vs separate dir]
 
-## Architecture
-
-- [Where the main entry point is]
-- [Top-level module map: src/X handles A, src/Y handles B]
-- [External integrations: APIs, databases, MCP servers, etc.]
-
 ## Hard constraints
 
 - [Anything in README marked as MUST/NEVER]
@@ -83,6 +77,8 @@ Write a brief one-paragraph summary of what you found before proceeding.
 ```
 
 Fill in only what you actually observed. **Don't invent conventions.** If you can't tell whether tests live in `tests/` or alongside source files, leave that line out rather than guessing.
+
+**Don't write down what the agent can read for itself.** No directory listings, no module maps, no dependency inventories, no architecture overviews — it reads the repo. The file earns its place with what *isn't* in the repo: the deploy step nobody wrote down, the version lock and why it exists, the convention that differs from the tool's default, the thing that looks wrong but must stay.
 
 After writing, summarize what's in the new `CLAUDE.md` so the user can correct anything you misread.
 

@@ -1,29 +1,39 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-30
 sources:
   - https://code.claude.com/docs/en/sub-agents
+  - https://code.claude.com/docs/en/best-practices
 ---
 
 # Research-then-edit
 
-A read-only subagent reads the files; you edit in main with the summary as focused context. The single cheapest token-savings workflow.
+A read-only subagent researches; you edit in main with its summary as focused context.
 
 ## Why this works
 
-File reads dominate context usage during work (see [`../principles/context-is-finite.md`](../principles/context-is-finite.md)). A subagent reads in its own context window; only its final text summary returns to yours. In the doc's worked example, the subagent reads 6K tokens of files; main gets back a 400-token summary. ~15× savings, same answer.
+**Not to save tokens.** This doc used to claim ~15× savings on a typical research task. That framing is retired: a subagent is a second conversation with its own system prompt and its own billing, so delegating usually costs *more* in total than reading the files yourself. Handing the same task to a subagent also doesn't make the answer better.
+
+What it actually buys you:
+
+- **Noise stays out of your way.** A wide search produces a lot of output you don't need to see. The subagent absorbs it and hands back the conclusion.
+- **Parallelism.** Several independent questions can be answered at once, which reading sequentially can't do.
+- **A reader without your assumptions.** A subagent that never saw your conversation isn't anchored on the explanation you've already half-committed to. This is the one case where delegation genuinely improves the answer — and it's why independent review works.
+
+Pick it for those reasons. If none of them apply, just read the files.
 
 ## When to use it
 
-- **"Understand this area before I change it"** — your most common kind of task.
-- **"Find all callers of X" / "audit all usages of Y"** — bounded research with a clear deliverable.
-- **"Trace this bug back to its source"** — exploratory work that touches many files.
-- **Any codebase exploration where you can phrase a clear summary deliverable.**
+- **Wide, noisy searches** — "find all callers of X", "audit every usage of Y". Bounded question, clear deliverable, output you don't want in full.
+- **Several independent questions at once** — see Parallel research below.
+- **Review that shouldn't inherit your reasoning** — see [`diff-review-cycle.md`](diff-review-cycle.md).
+- **"Trace this bug back to its source"** — exploratory work across many files where you want the conclusion, not the trail.
 
 ## When NOT to use it
 
-- **Single-file question.** Just open the file or ask Claude in main.
-- **Quick check** (does this function exist? what's the signature?). Subagents have startup overhead.
+- **Single-file question.** Just open the file or ask in main.
+- **Quick check** (does this function exist? what's the signature?). Subagents have startup overhead and cost extra.
+- **Anywhere you'd only be doing it "for context".** That reason no longer holds — see [`../principles/context-is-finite.md`](../principles/context-is-finite.md).
 - **Iterative refinement** where you'll need to follow up several times — subagents start fresh each time and need re-briefing.
 - **Tasks that require both reading AND editing in one pass.** Defeats the isolation.
 
@@ -62,7 +72,7 @@ Each subagent should return a 1-paragraph summary of its module's role and key f
 
 Best when the research paths don't depend on each other. Claude synthesizes at the end.
 
-> **Watch the parent context cost** when many subagents return detailed summaries — each summary lands in main. For sustained parallelism with separate contexts that don't crowd main, agent teams (separate doc; deferred) are the heavier tool.
+> **Each summary still lands in main**, and each subagent bills separately. Parallelism is the gain here; economy isn't. For sustained parallel work, agent teams are the heavier tool (separate doc; deferred).
 
 ### Chain subagents
 
@@ -97,6 +107,7 @@ Full mechanics: [`claude/tools/subagents.md`](../../claude/tools/subagents.md).
 ## See also
 
 - [`plan-first.md`](plan-first.md) — pairs naturally. Plan mode for the plan; research-then-edit during execution if the plan needs deep exploration.
-- [`long-task-with-compact.md`](long-task-with-compact.md) — token-budget management; this workflow is the main lever.
-- [`../principles/context-is-finite.md`](../principles/context-is-finite.md) — the principle this workflow exists to act on.
+- [`long-task-with-compact.md`](long-task-with-compact.md) — the levers for keeping a long session focused.
+- [`../principles/context-is-finite.md`](../principles/context-is-finite.md) — why "to save context" is no longer a reason to delegate.
+- [`diff-review-cycle.md`](diff-review-cycle.md) — the fresh-reviewer case, which is the strongest reason to delegate.
 - [`../principles/defer-until-friction.md`](../principles/defer-until-friction.md) — when to write a custom subagent vs. using built-ins.

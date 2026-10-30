@@ -1,8 +1,9 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-30
 sources:
   - https://code.claude.com/docs/en/context-window
+  - https://code.claude.com/docs/en/best-practices
 ---
 
 # Context window: what fills it, what survives compaction
@@ -80,9 +81,11 @@ Typing `!git status` runs the command in your shell. Both the command and its ou
 
 Setting `respondToBashCommands: false` adds the output to context without prompting Claude for a response.
 
-## Subagents — the biggest context-saver
+## Subagents and context
 
-A subagent has its **own separate context window**. The main session pays for spawning + reading the result back; nothing the subagent reads from disk touches your main window.
+A subagent has its **own separate context window**. The main session pays for spawning and for reading the result back; nothing the subagent reads from disk lands in your main window.
+
+That makes a subagent good at keeping noisy output out of your way — but it is a *second* conversation with its own system prompt and its own billing, so it usually costs more in total than reading the files yourself. Delegate for parallelism, for noise isolation, or for a reviewer that hasn't seen your reasoning. See [`../../shared/workflows/research-then-edit.md`](../../shared/workflows/research-then-edit.md).
 
 What the subagent gets at spawn:
 
