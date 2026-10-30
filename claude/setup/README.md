@@ -18,7 +18,7 @@ How to prepare a fresh machine to run Claude Code — install, authenticate, and
 
 - **JetBrains plugin** — intentionally skipped. VS Code only.
 - **Cloud provider deep dives** (Bedrock / Vertex / Foundry setup steps) — covered in their respective Anthropic docs; `authentication.md` documents the precedence and env vars, not the cloud-side setup.
-- **MCP server install** — touched on in `vs-code.md`; full MCP doc deferred to its own issue.
+- **MCP server install** — touched on in `vs-code.md`; the full reference is [`../tools/mcp.md`](../tools/mcp.md).
 
 ## Day-1 settings worth adopting
 

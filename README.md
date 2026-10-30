@@ -21,6 +21,7 @@ Agent-agnostic on purpose. Claude Code is the agent in use today and [`claude/`]
 | Spotted recurring friction | [`claude/workflows/scaffolding-decision.md`](claude/workflows/scaffolding-decision.md) |
 | Want the "why" behind a choice | [`shared/principles/`](shared/principles/) |
 | Specific Claude Code mechanic | [`claude/`](claude/) |
+| Wondering whether Claude Code can do X at all | [`claude/surface-map.md`](claude/surface-map.md) |
 
 ## Layout
 
@@ -31,9 +32,10 @@ Agent-agnostic on purpose. Claude Code is the agent in use today and [`claude/`]
 - **[`claude/`](claude/)** — Claude Code specifics.
   - **`setup/`** — install, authentication, vs-code.
   - **`config/`** — memory, settings, permissions.
-  - **`tools/`** — context-window, prompt-caching, hooks, skills, tools-reference, subagents.
+  - **`tools/`** — context-window, prompt-caching, hooks, skills, tools-reference, subagents, mcp, plugins.
   - **`slash-commands/`** — built-in commands + bundled skills reference.
   - **`workflows/`** — parallel-with-forks, custom-subagent-creation, scaffolding-decision, memory-curation, verification-ladder.
+  - **[`surface-map.md`](claude/surface-map.md)** — everything Claude Code does that isn't documented in depth here: one line and a link each.
 - **[`research/`](research/)** — scratchpad for raw notes from docs and source material before they get distilled into `shared/` or `claude/`.
 
 ## Adding a new agent

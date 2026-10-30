@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-30
 sources:
   - https://code.claude.com/docs/en/overview
 ---
@@ -29,6 +29,9 @@ Each of these has a distilled doc carrying a freshness stamp. The stamp, not thi
 | Slash commands, Commands | [`claude/slash-commands/built-in.md`](../../../claude/slash-commands/built-in.md) |
 | Advanced setup, Authentication, Network config | [`claude/setup/`](../../../claude/setup/) |
 | VS Code | [`claude/setup/vs-code.md`](../../../claude/setup/vs-code.md) |
+| MCP, MCP quickstart | [`claude/tools/mcp.md`](../../../claude/tools/mcp.md) |
+| Plugins overview, plugin security | [`claude/tools/plugins.md`](../../../claude/tools/plugins.md) |
+| Goal, Stop hooks, best practices | [`claude/workflows/verification-ladder.md`](../../../claude/workflows/verification-ladder.md) |
 
 ## Next gaps, in order
 
@@ -38,21 +41,27 @@ The largest single hole. `Artifact` appears in the tools reference as a tool and
 
 Needs its own issue, and probably its own doc rather than a section bolted onto the tools reference.
 
-### 2. MCP
-
-[MCP](https://code.claude.com/docs/en/mcp) is referenced from several docs but never distilled. Deferred originally because there was no client project needing it; that reasoning expires the moment one does. The context cost of a connected server is the part worth capturing — it's a per-session tax, and the tool-search behaviour that offsets it is already covered under prompt caching.
-
-### 3. Agent teams and workflows
+### 2. Agent teams and workflows
 
 [Agent teams](https://code.claude.com/docs/en/agent-teams) and [workflows](https://code.claude.com/docs/en/workflows) didn't exist when the original sweep ran. Both bear on parallel work, which [`claude/workflows/parallel-with-forks.md`](../../../claude/workflows/parallel-with-forks.md) covers only via forks and subagents. Workflow fan-out has its own prompt-cache behaviour, already noted in the caching doc.
 
-### 4. Best practices
+### 3. Best practices
 
 [Best practices](https://code.claude.com/docs/en/best-practices) is Anthropic's own framing. Worth a read specifically to check it against [`shared/principles/`](../../../shared/principles/) — the value is in the disagreements, not the overlaps.
+
+## Deferred until friction
+
+**Stack-specific guidance** — Spring AI, Spring Boot, Next.js + Supabase — is deliberately unwritten. Three projects are expected to adopt practices from this repo, and the temptation is to pre-write their conventions now.
+
+Don't. [`defer-until-friction.md`](../../../shared/principles/defer-until-friction.md) applies to the playbook itself: anything written before a project hits real friction is anticipated — and when this playbook was last field-tested, the rough edges that actually showed up were not the ones that had been predicted. When a project does hit something, capture it then — and capture what was *surprising*, not the stack's documented defaults.
+
+The method for deriving per-stack rules already exists in [`setting-up-from-another-project.md`](../../../shared/project-setup/setting-up-from-another-project.md): read the manifest, take the real commands, add rules only for what you observed. That is stack-agnostic on purpose and should stay that way until it demonstrably fails.
 
 ## Deliberately out of scope
 
 Revisit only if the triggering condition becomes true.
+
+Everything not listed under "Covered" or "Next gaps" is indexed one line at a time in [`claude/surface-map.md`](../../../claude/surface-map.md), which replaced the breadth-pass doc that used to sit beside this file.
 
 | Area | Condition to revisit |
 | --- | --- |

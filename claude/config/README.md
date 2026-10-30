@@ -17,7 +17,7 @@ How Claude Code is told what to do (memory) and what it's allowed to do (setting
 | Configure the tool itself (theme, model, env vars, hooks) | `settings.json` (settings.md) |
 | Allow / block specific tools or commands | `permissions` in `settings.json` (permissions.md) |
 | Allow / block at the OS level (Bash subprocesses) | `sandbox` in `settings.json` (settings.md) |
-| Force something to happen at a specific moment | Hook (covered in a later doc) |
+| Force something to happen at a specific moment | Hook — [`../tools/hooks.md`](../tools/hooks.md) |
 | Make Claude *not be able to even try* something | Permission deny rule or hook, not memory |
 
 The single most useful framing: **memory shapes intent, settings shape configuration, permissions shape what runs.** Memory and settings can be ignored or misread; permissions and hooks cannot.
