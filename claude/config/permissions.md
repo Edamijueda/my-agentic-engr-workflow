@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-30
 sources:
   - https://code.claude.com/docs/en/permissions
   - https://code.claude.com/docs/en/permission-modes
@@ -57,7 +57,7 @@ Tool(param:value)      # match by input parameter (deny/ask only)
 
 ### Match by input parameter (deny/ask only)
 
-Match a top-level input field on any tool with `Tool(param:value)`. Only for deny/ask — allow rules would be unsafe because they'd suggest the whole call is safe, which isn't true.
+Match a top-level input field on any **built-in** tool with `Tool(param:value)`. Only for deny/ask — allow rules would be unsafe because they'd suggest the whole call is safe, which isn't true.
 
 | Rule | Matches |
 | --- | --- |
@@ -79,7 +79,7 @@ Fields that have their own canonicalizing syntax can't be matched this way and e
 
 | In rule type | Allowed |
 | --- | --- |
-| Deny / ask | `*` (all tools), `Bash*`, `mcp__*` (all MCP) |
+| Deny / ask | `*` (all tools), `Bash*`, `mcp__*` (all MCP). Must match the **full** tool name. A bare-name glob deny removes matched tools from context, same as a bare tool name — except `EndConversation`, which a glob can't remove while any other tool remains. |
 | Allow | Only after literal `mcp__<server>__` prefix, server segment glob-free (e.g. `mcp__github__get_*`). Other allow globs ignored with a warning. |
 
 Typos in tool names emit a startup warning (except names containing `_` or `*`). **Use canonical names from `tools-reference`** — the label shown in transcripts and dialogs can differ (e.g. transcript "Stop Task" → canonical `TaskStop`).
@@ -103,15 +103,19 @@ The permission UI writes the space-separated form when you click "Yes, don't ask
 
 Recognized separators: `&&`, `||`, `;`, `|`, `|&`, `&`, newlines.
 
-- Each subcommand must match independently.
+- For an **allow** to cover a compound, every subcommand must match independently (or be a read-only command).
+- **Deny and ask rules fire if *any* subcommand matches** — including one nested in a subshell, a command substitution, or a control-flow body. An ask rule `Bash(git clean *)` still prompts for `cd /tmp && git clean -f` and for `echo "$(git clean -f)"`, **even in auto mode**.
+- A trailing `&&` or `||` with nothing after it makes the command unparseable, so it isn't split for allow matching — `Bash(npm *)` does not approve `npm test &&`.
 - Approving a compound saves a **separate rule per subcommand** (up to 5).
-- `cd subdir` in a compound generates its own Read rule for the path.
+- `cd` into a directory *outside* your working directories generates its own Read rule for that path.
 
 ### Process wrappers (auto-stripped before matching)
 
-Stripped: `timeout`, `time`, `nice`, `nohup`, `stdbuf`. So `Bash(npm test *)` matches `timeout 30 npm test`.
+Stripped: `timeout`, `time`, `nice`, `nohup`, `stdbuf`, the shell builtins `command` and `builtin`, and zsh's `noglob`. So `Bash(npm test *)` matches `timeout 30 npm test`. **Not** stripped: the query form `command -v` (it looks a command up rather than running it) and zsh's `nocorrect`. The list is built in and not configurable.
 
 `xargs` is stripped **only when it has no flags**. `xargs -n1 grep pattern` is treated as an `xargs` command, not a `grep` command.
+
+**Leading variable assignments cut differently for allow than for deny.** Claude Code strips a leading assignment of certain known-safe variables, so `Bash(npm test *)` matches `NODE_ENV=test npm test`. An **allow** rule won't match past an assignment of any *other* variable. A **deny or ask** rule matches past any leading assignment — `Bash(rm *)` in deny still catches `FOO=bar rm -rf tmp/`.
 
 **Not stripped** — these execute their arguments as a command, so a permissive rule on the runner is a hole: `direnv exec`, `devbox run`, `mise exec`, `npx`, `docker exec`. Write narrow rules like `Bash(devbox run npm test)`, not `Bash(devbox run *)`.
 
@@ -121,7 +125,28 @@ Stripped: `timeout`, `time`, `nice`, `nohup`, `stdbuf`. So `Bash(npm test *)` ma
 
 `ls`, `cat`, `echo`, `pwd`, `head`, `tail`, `grep`, `find`, `wc`, `which`, `diff`, `stat`, `du`, `cd`, and read-only forms of `git`. Not configurable — add an `ask` or `deny` rule to require a prompt for one of these.
 
-Unquoted globs allowed for these (since every flag is read-only). `cd` into a path inside your working dir or an additional dir is read-only. **`cd` combined with `git` in one compound always prompts**, regardless of target.
+Unquoted globs are allowed **only for commands whose every flag is read-only** — `ls *.ts`, `wc -l src/*.py`. Commands with write- or exec-capable flags (`find`, `sort`, `sed`, `git`) prompt when an unquoted glob is present, because the glob could expand into a flag like `-delete`.
+
+A `cd` into a path inside your working dir or an additional dir is read-only, and `cd packages/api && ls` runs unprompted when each part qualifies. Two combinations still prompt:
+
+- **`cd` with `git`** — but only when the `cd` actually changes directory. A `cd` that resolves to the current working directory is a no-op and doesn't prompt. (Running `git` in a new directory can execute that directory's hooks.)
+- **`cd` with a redirect**, when Claude Code can't tell what the redirect target resolves against after the `cd`. A redirect to `/dev/null` doesn't prompt, since it doesn't depend on the working directory.
+
+A redirect on its own adds a check on the target: `ls > out.txt` is not treated as read-only.
+
+**Other cases where a read-only command still prompts in Manual mode:** `docker` carrying a flag that selects a different daemon (`-H`, `--context`, Podman's `--url`/`--connection`); `file` with `-m`/`--magic-file` or `-f`/`--files-from` (both open paths named in the value); `ps` where an argument could act as the `e` option (`ps auxe`, `ps aux -e` — but `ps aux` and `ps -ef` are fine); a command that sets, unsets or loops over a special shell variable such as `PATH` or `IFS`; anything Claude Code can't fully parse; and **any command over 10,000 characters**, which always prompts.
+
+### What a Bash rule doesn't match
+
+A rule matches the command text Claude writes, after compound-splitting and wrapper-stripping. It is **not** a boundary around the program:
+
+| Rule | Stops | Doesn't stop |
+| --- | --- | --- |
+| `Bash(curl *)` | `curl https://example.com` | `/usr/bin/curl ...`, `sh -c 'curl ...'` |
+| `Bash(rm *)` | `rm -rf build/` | `/bin/rm -rf build/`, `bash -c 'rm -rf build/'` |
+| `Bash(git push *)` | `git push origin main` | `git -C . push origin main`, `git -c push.default=current push origin main`, `git 'push' origin main` |
+
+Your other rules and the permission mode decide the right-hand column. For enforcement that doesn't depend on command text, use the sandbox or a `PreToolUse` hook.
 
 ### Bash URL filtering is fragile
 
@@ -168,13 +193,13 @@ Apply to Claude's built-in file tools and to file-related Bash commands Claude C
 
 ## WebFetch rules
 
-`WebFetch(domain:...)` matches the requested hostname, case-insensitive.
+`WebFetch(domain:...)` matches the requested hostname, case-insensitive, with a trailing `.` stripped from both rule and hostname (`example.com.` ≡ `example.com`). Wildcard matching needs v2.1.172+.
 
 | Rule | Effect |
 | --- | --- |
 | `WebFetch(domain:example.com)` | Exact host `example.com` |
 | `WebFetch(domain:*.example.com)` | Any subdomain (`api.example.com`, `a.b.example.com`) but **not** `example.com` itself |
-| `WebFetch(domain:*)` | All domains (= bare `WebFetch`) |
+| `WebFetch(domain:*)` | All domains — **not** the same as a bare `WebFetch` rule. Both cover every URL, but only the `domain:` form also feeds the sandbox's allowed/denied domain list. |
 
 Mid-position wildcards match only **between dots** — `example.*` matches `example.org` but **not** `example.evil.com`. This is what makes the rule resistant to attacker-registered domains.
 
@@ -221,7 +246,7 @@ Six modes. The mode sets the baseline; rules layer on top.
 
 | Mode | Auto-runs | Best for |
 | --- | --- | --- |
-| `default` | Reads only | Sensitive work, getting started |
+| `default` (CLI alias `manual`) | Reads only | Sensitive work, getting started |
 | `acceptEdits` | Reads + edits + common fs commands | Iterating on code you'll review later |
 | `plan` | Reads only; plans without editing | Exploring before changing |
 | `auto` | Everything, with background classifier checks | Long tasks; reducing prompt fatigue |
@@ -236,15 +261,22 @@ Auto-approves on paths inside the working directory or `additionalDirectories`:
 
 - File edits (Edit/Write).
 - Common fs Bash commands: `mkdir`, `touch`, `rm`, `rmdir`, `mv`, `cp`, `sed`.
-- Safe-env-prefixed variants: `LANG=C ...`, `NO_COLOR=1 ...`.
-- Process-wrapped variants: `timeout ...`, `nice ...`, `nohup ...`.
-- With PowerShell tool enabled: `Set-Content`, `Add-Content`, `Clear-Content`, `Remove-Item` and their aliases.
+- Safe-env-prefixed (`LANG=C ...`, `NO_COLOR=1 ...`) and process-wrapped (`timeout`, `nice`, `nohup`) variants of those — **except `touch`**, which only auto-approves as a bare command on plain file paths. A `touch` with an option, a glob, or any prefix still prompts.
+- With PowerShell tool enabled: `Set-Content`, `Add-Content`, `Clear-Content`, `Remove-Item` and their aliases. A *positional* argument containing a quote character still prompts — pass content through a named parameter such as `-Value`.
 
-Outside that scope, protected paths, and all other Bash → still prompt.
+Still prompts: paths outside the working directories, protected-path writes, recognized `rm`/`rmdir` critical-path removals, and every other Bash command except the built-in read-only set. **Symlinks that resolve outside the working directory are not auto-approved.**
 
 ### `plan`
 
-Reads files + runs read-only shell commands; doesn't edit. Enter via `Shift+Tab` cycle, `/plan` prefix, or `--permission-mode plan`.
+Claude reads, explores with shell commands, and writes a plan without editing source. Enter via `Shift+Tab` cycle, `/plan` prefix, or `--permission-mode plan`. `Shift+Tab` again exits without approving.
+
+**Which shell commands run while planning** depends on the session:
+
+| Situation | Behaviour |
+| --- | --- |
+| Interactive terminal with bypass available | No classifier and no prompt applies to planning commands — and plan mode's edit blocks aren't enforced either |
+| Auto available, `useAutoModeDuringPlan` on (default) | Classifier reviews shell commands other than critical-path removals |
+| Otherwise | Anything outside the built-in read-only set prompts, even with sandbox auto-allow on |
 
 When the plan is ready, Claude presents it and asks how to proceed:
 
@@ -319,7 +351,13 @@ Classifier runs on a server-configured model independent of your `/model`. **Cou
 
 ### `dontAsk`
 
-Auto-deny everything that would prompt. Only `permissions.allow` rules and the built-in read-only Bash set execute. Explicit ask rules → denied (instead of prompting). Fully non-interactive — for CI/scripts.
+Auto-deny everything that would prompt; the session never waits for input. Fully non-interactive — for CI/scripts.
+
+**Still runs:** reads inside the working directories, the built-in read-only Bash set, calls matching `permissions.allow`, and calls a `PreToolUse` hook approved.
+
+**Denied rather than prompted:** explicit `ask` rules, the built-in `AskUserQuestion` tool (even with a matching allow rule), connector tools your org set to `ask`, and MCP tools marked `requiresUserInteraction`.
+
+**Can't be approved by an allow rule or a hook at all:** recognized `rm`/`rmdir` critical-path removals, and reads from a network path.
 
 Cloud sessions on Claude Code for the web **ignore `defaultMode: "dontAsk"`**.
 
@@ -329,11 +367,21 @@ Set with `--permission-mode dontAsk`.
 
 Skip every check. **Includes writes to protected paths.**
 
-Still prompts:
-- Explicit ask rules.
-- `rm -rf /` and `rm -rf ~` (circuit breaker against model error).
+Still prompts or denies — the "actions no mode auto-approves" set:
+- Explicit `ask` rules, and connector tools your org set to `ask`.
+- Tools requiring user interaction: `AskUserQuestion`, MCP tools marked `requiresUserInteraction`.
+- Recognized `rm`/`rmdir` critical-path removals, and anything flagged `Dangerous rm operation not ruled out`. The `rm` prompt can be turned off in this mode.
+- Certain cross-session messaging safeguards.
+- Reads outside the working directories when `permissions.blockReadsOutsideWorkingDirectories` is on.
 
-**Won't enter from a session that didn't start with one of the enabling flags** — restart with `--permission-mode bypassPermissions` or `--dangerously-skip-permissions` (equivalent).
+**Deny rules still block. Allow rules have no effect.**
+
+**Won't enter from a session that didn't start with one of the enabling flags** — restart with `--permission-mode bypassPermissions` or `--dangerously-skip-permissions` (equivalent), or set `permissions.defaultMode` in user, `--settings` or managed settings.
+
+- `--allow-dangerously-skip-permissions` adds the mode to the `Shift+Tab` cycle without activating it.
+- `--restricted` refuses the mode outright (v2.1.248+).
+- Background sessions need the acceptance recorded in user or managed settings.
+- Accepting the first-run warning writes `skipDangerousModePermissionPrompt: true` to `~/.claude/settings.json`; declining exits Claude Code.
 
 **Refuses to start as root/sudo** on Linux/macOS unless inside a recognized sandbox. For autonomous runs, use the official dev container which runs as a non-root user.
 
@@ -351,11 +399,12 @@ Lock off org-wide via `permissions.disableBypassPermissionsMode: "disable"` in m
 | CLI startup | `--permission-mode <mode>` (also works with `-p`) |
 | Settings default | `permissions.defaultMode` |
 | VS Code | Mode indicator at bottom of prompt box; or `claudeCode.initialPermissionMode` (doesn't accept `auto` — use `defaultMode` for that) |
-| JetBrains | Same as CLI (runs in IDE terminal) |
 | Desktop | Mode selector next to send button |
 | Web/mobile | Mode dropdown next to prompt; cloud sessions limited to Accept edits / Plan / Auto |
 
-Optional modes slot into the `Shift+Tab` cycle after `plan` only when explicitly enabled (`auto` requires opt-in prompt; `bypassPermissions` requires startup with enabling flag; `dontAsk` never in cycle, flag-only).
+Optional modes slot into the `Shift+Tab` cycle after `plan` when enabled, **`bypassPermissions` first and `auto` last** (`bypassPermissions` requires startup with an enabling flag; `dontAsk` is never in the cycle, flag-only).
+
+**Starting-mode precedence:** the `--permission-mode` flag, then `permissions.defaultMode` in a settings file, then the built-in default. A project's `.claude/settings.json` or `.claude/settings.local.json` is honored for terminal sessions for **every value except `auto` and `bypassPermissions`**.
 
 ## Protected paths
 
@@ -363,14 +412,15 @@ Writes to these are never auto-approved in any mode **except** `bypassPermission
 
 | Mode | Protected writes |
 | --- | --- |
-| `default`, `acceptEdits`, `plan` | Prompted |
+| `default`, `acceptEdits` | Prompted |
+| `plan` | Allowed in an interactive terminal session where bypass is available. Otherwise routed to the classifier if auto is available during planning, else prompted |
 | `auto` | Routed to classifier |
 | `dontAsk` | Denied |
 | `bypassPermissions` | Allowed |
 
 **`permissions.allow` rules don't pre-approve protected-path writes** — the safety check runs before allow rules. In modes that prompt, the prompt offers "Yes, and allow Claude to edit its own settings for this session" which approves further `.claude/` writes in that session.
 
-**Protected directories:** `.git`, `.config/git`, `.vscode`, `.idea`, `.husky`, `.cargo`, `.devcontainer`, `.yarn`, `.mvn`, `.claude` (except `.claude/worktrees`).
+**Protected directories:** `.git`, `.config/git`, `.vscode`, `.idea`, `.husky`, `.cargo`, `.devcontainer`, `.yarn`, `.mvn`, `.claude`. `.claude` has exceptions: `.claude/worktrees/`, the current session's plan files, and project auto-memory Markdown files in sessions started without `--restricted`.
 
 **Protected files:**
 - Git: `.gitconfig`, `.gitmodules`.
@@ -380,6 +430,7 @@ Writes to these are never auto-approved in any mode **except** `bypassPermission
 - Hooks: `.pre-commit-config.yaml`, `lefthook.yml`/`.lefthook.yaml`/etc.
 - Editor / lint: `.ripgreprc`, `pyrightconfig.json`, `.devcontainer.json`.
 - Claude: `.mcp.json`, `.claude.json`.
+- **Anything passed via `--settings`, `--mcp-config` or `--agents`** — and a settings file that is a symlink to a protected target is protected too.
 
 ## Working directories
 
@@ -397,6 +448,17 @@ By default Claude has access to the launch directory only. Extend with:
 - Plugins, or
 - Launching from the config directory directly.
 
+## Workspace trust (project allow rules)
+
+`permissions.allow` rules and `permissions.additionalDirectories` in a project's `.claude/settings.json` **grant** capability, so Claude Code applies them only after you accept the workspace-trust dialog for that folder. `deny` and `ask` rules aren't gated — they only restrict.
+
+- Trust is keyed on the **git repository root**, so it covers the whole repo except nested repos (submodules). In a worktree it uses the main checkout's root.
+- Started in your **home directory**, trust is held for that session only and never written to disk.
+- **`claude -p` and the SDK never show the dialog.** Project allow rules and additional directories are simply not applied, and Claude Code prints a `this workspace has not been trusted` warning to stderr. Project *hooks*, `env` blocks and helper commands **do** run — see [`../tools/hooks.md`](../tools/hooks.md).
+- `.claude/settings.local.json` normally skips the trust step as your own file — unless it's tracked in git or `.claude` is a symlink, in which case it's treated as repository-supplied.
+
+`permissions.blockReadsOutsideWorkingDirectories` makes the file tools refuse paths outside your working directories in **every** mode. In auto mode Claude Code offers to turn it on the first time Claude reads outside them.
+
 ## Hooks integration
 
 `PreToolUse` hooks register custom logic that runs before the permission prompt. Hook output can `deny`, force `ask`, or `allow`.
@@ -406,6 +468,10 @@ By default Claude has access to the launch directory only. Extend with:
 - A matching deny still blocks even when the hook returned `"allow"`.
 - A matching ask still prompts even when the hook returned `"allow"`.
 - A hook that exits with code 2 blocks before rules are evaluated — overrides allow rules.
+
+> **A mod can get past both.** A mod handling `tool.check` answers after `PreToolUse` hooks. With managed settings on the machine, or a Team/Enterprise `/login` as the session credential, deny rules and hook blocks hold. **Without either** — an API key or a long-lived `CLAUDE_CODE_OAUTH_TOKEN` session counts as without — a mod can approve a call a deny rule refused or a hook blocked. In plan mode it can only do that for read-only calls.
+
+One tool is outside the system: a deny or ask rule can't block `EndConversation` while any other tool remains available.
 
 **Use case**: bare `Bash` allow + a `PreToolUse` hook that rejects specific commands = run everything without prompts except the few you block.
 
@@ -421,6 +487,7 @@ Combined behaviors:
 - `sandbox.filesystem.allowWrite/denyWrite/denyRead/allowRead` merge with `Edit(...)` and `Read(...)` permission paths into the sandbox boundary.
 - `sandbox.network.allowedDomains` / `deniedDomains` merge with `WebFetch(domain:...)` permission rules.
 - With `autoAllowBashIfSandboxed: true` (default), sandboxed Bash skips the bare `Bash` ask rule prompt — the sandbox boundary substitutes. **Content-scoped ask rules like `Bash(git push *)` still prompt.** `rm`/`rmdir` targeting `/`, home, or critical system paths still prompt.
+- **Plan mode skips that substitution.** Built-in read-only commands still run unprompted, but any other shell command goes through the normal permission flow while you're planning.
 - Commands in `sandbox.excludedCommands` respect the bare `Bash` ask rule normally.
 
 ## Managed-only settings (org admins)
@@ -432,7 +499,7 @@ Combined behaviors:
 | `allowManagedHooksOnly` | Only managed/SDK/managed-plugin hooks load. |
 | `sandbox.filesystem.allowManagedReadPathsOnly` | Only managed `allowRead` paths honored. |
 | `sandbox.network.allowManagedDomainsOnly` | Only managed `allowedDomains` honored; others auto-blocked. |
-| `disableBypassPermissionsMode` / `disableAutoMode` | Lock off `bypassPermissions` / `auto`. |
+| `disableBypassPermissionsMode` / `disableAutoMode` | Lock off `bypassPermissions` / `auto`. `disableBypassPermissionsMode` is usually deployed as managed policy but **works from any scope** — set it in your own settings to lock yourself out. |
 | `strictPluginOnlyCustomization` | Lock skills/agents/hooks/mcp to plugins + managed. |
 
 ## Precedence (recap)
