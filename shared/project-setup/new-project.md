@@ -115,10 +115,6 @@ Gets gitignored automatically when Claude Code creates it.
 
 Permissions are first-match-wins and have a few edge cases (process wrappers, dev-env runners). For absolute "this must never happen", use a hook (Claude Code: [`claude/tools/hooks.md`](../../claude/tools/hooks.md)) — `PreToolUse` exiting code 2 blocks before permission rules are evaluated. Example: a hook that rejects any `git push` to `main` regardless of allow rules elsewhere.
 
-### Cross-OS gotcha
-
-- On **native Windows**, there's **no sandbox** (Seatbelt/bubblewrap aren't available). Compensate with stricter `permissions.deny` rules on the Windows machine, or switch to WSL 2 for sandboxed development.
-
 ---
 
 ## Step 3: Plan-mode-first default
@@ -201,7 +197,6 @@ Or edit `.claude/settings.json` directly. Paste the starter deny block above; ad
 ```
 # 5. Verify plan-mode default is your personal default
 cat ~/.claude/settings.json   # macOS/Linux
-type %USERPROFILE%\.claude\settings.json   # Windows CMD
 ```
 
 Should include `"permissions": { "defaultMode": "plan" }`. If not, add it (see Step 3 above).
@@ -222,18 +217,6 @@ What conventions does this project use, and which permissions are denied?
 ```
 
 Claude should answer from `CLAUDE.md` and reference the deny rules without you re-explaining. If it can't, your memory or permissions aren't loading — `/doctor` will surface the issue.
-
----
-
-## Cross-OS notes
-
-Most steps are OS-neutral. The OS-specific bits:
-
-- **Permission rule paths**: Read/Edit rules use POSIX form on both OSes. Windows `C:\Users\alice\.env` normalizes to `/c/Users/alice/.env` — use `//c/**/.env` to match anywhere on C: drive. See [`claude/config/permissions.md`](../../claude/config/permissions.md).
-- **Personal settings path**: `~/.claude/settings.json` on Mac/Linux, `%USERPROFILE%\.claude\settings.json` on Windows. Same content.
-- **Sandbox availability**: macOS (Seatbelt) + Linux/WSL2 (bubblewrap) — yes. Native Windows — no. On native Windows, lean harder on `permissions.deny`.
-- **Bash tool on Windows**: needs Git for Windows for the Bash tool; otherwise falls back to PowerShell. See [`claude/setup/install.md`](../../claude/setup/install.md).
-- **The credentials file** lives in different places per OS (macOS Keychain, Linux `~/.claude/.credentials.json`, Windows `%USERPROFILE%\.claude\.credentials.json`). Per-machine — don't try to copy across.
 
 ---
 

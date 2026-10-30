@@ -73,15 +73,14 @@ No browser login — env-var-driven.
 
 The presence of `CLAUDE_CODE_USE_BEDROCK=1`, `_USE_VERTEX=1`, or `_USE_FOUNDRY=1` is what flips into cloud auth (see precedence below).
 
-## Credential storage (cross-OS)
+## Credential storage
 
 | OS | Location | Protection |
 | --- | --- | --- |
 | **macOS** | Encrypted Keychain | OS-managed |
 | **Linux** | `~/.claude/.credentials.json` | File mode `0600` |
-| **Windows** | `%USERPROFILE%\.claude\.credentials.json` | Inherits user-profile ACLs (your account only by default) |
 
-`CLAUDE_CONFIG_DIR` env var overrides the location on Linux + Windows (not macOS — Keychain stays).
+`CLAUDE_CONFIG_DIR` overrides the location where a file is used; on macOS the Keychain stays regardless. Useful when the home directory isn't writable, as in some containers and restricted CI.
 
 Managed via `/login` and `/logout`. **Don't edit `.credentials.json` by hand.** For custom API endpoints use `ANTHROPIC_BASE_URL` (e.g. LLM gateways).
 
@@ -183,17 +182,9 @@ echo $ANTHROPIC_API_KEY      # should be empty if you want subscription
 echo $CLAUDE_CODE_USE_BEDROCK # 1 means Bedrock path active
 ```
 
-## Cross-OS notes
-
-- **macOS** is the easiest path — Keychain handles credential storage without any config.
-- **Windows** native: same `%USERPROFILE%\.claude\.credentials.json` ACL story. Default file permissions are fine.
-- **WSL2** is the most common source of "browser code paste" friction — expect it.
-- **`CLAUDE_CONFIG_DIR`** can move the credentials file on Linux + Windows (not macOS) — useful for setups where home directory isn't writable (some containers, restricted CI).
-
 ## Practical applications for this repo
 
 - **For solo dev (this user)**: Pro or Max subscription, `/login` once per machine. Done.
-- **For the Windows VM**: same login on first run. Credentials stored in `%USERPROFILE%\.claude\.credentials.json`, isolated per machine — not synced with the Mac host. **Don't try to copy the file across** — Keychain on Mac doesn't map to a flat file anyway.
 - **For client engagements**: if the client is on Bedrock/Vertex/Foundry, set the right `CLAUDE_CODE_USE_*` env var **before** launching `claude`. If on Console, the client's admin needs to invite your Claude.ai email with the right role.
 - **For any CI work that may come up**: `claude setup-token` once, store `CLAUDE_CODE_OAUTH_TOKEN` as a CI secret. The token is good for a year — calendar a renewal.
 - **The Pro + `ANTHROPIC_API_KEY` gotcha** is worth catching early. If `/status` shows the wrong method, check env first.

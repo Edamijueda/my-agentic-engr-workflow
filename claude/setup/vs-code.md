@@ -129,7 +129,7 @@ Account & usage panel:
 - **Attribution tables**: usage per skill, subagent, plugin, MCP server.
 - Day/Week toggle (last 24h vs 7d).
 
-**Local-only**: computed from sessions on this machine. Won't see usage from your Windows VM or claude.ai sessions.
+**Local-only**: computed from sessions on this machine. Won't see usage from other machines or claude.ai sessions.
 
 ## Multiple conversations
 
@@ -262,24 +262,10 @@ Optional query params:
 - `prompt` — text to pre-fill (URL-encoded, **not auto-submitted**).
 - `session` — session ID to resume. Must belong to the workspace currently open. If not found, starts fresh. If already open, focuses that tab.
 
-Invoke per OS:
+Invoke:
 
 ```bash
-# macOS
 open "vscode://anthropic.claude-code/open?prompt=review%20my%20changes"
-
-# Linux
-xdg-open "vscode://anthropic.claude-code/open"
-```
-
-```powershell
-# Windows PowerShell
-Start-Process "vscode://anthropic.claude-code/open"
-```
-
-```cmd
-:: Windows cmd — `start` treats first quoted arg as window title, so pass an empty title first
-start "" "vscode://anthropic.claude-code/open"
 ```
 
 For terminal sessions (not VS Code tabs), use the CLI's `claude-cli://` handler instead.
@@ -326,19 +312,7 @@ rm -rf ~/Library/Application\ Support/Code/User/globalStorage/anthropic.claude-c
 rm -rf ~/.config/Code/User/globalStorage/anthropic.claude-code
 ```
 
-```powershell
-# Windows PowerShell
-Remove-Item -Recurse -Force "$env:APPDATA\Code\User\globalStorage\anthropic.claude-code"
-```
-
 (For full Claude Code uninstall including `~/.claude/`, see `install.md`.)
-
-## Cross-OS notes
-
-- Same extension on macOS and Windows. Settings UI identical.
-- **Windows shortcuts**: `Ctrl+...` everywhere. The `Cmd+Esc` Game Overlay issue is macOS-only.
-- **Cursor + VS Code forks**: same extension (via Open VSX). Cursor URI: `cursor:extension/anthropic.claude-code`.
-- VS Code's "Use Terminal" mode (`claudeCode.useTerminal: true`) effectively gives you the same CLI experience as the standalone install — useful in environments where the panel UI feels too heavy.
 
 ## Practical applications for this repo
 
@@ -349,5 +323,4 @@ Remove-Item -Recurse -Force "$env:APPDATA\Code\User\globalStorage\anthropic.clau
   - `useTerminal: false` (default) — graphical panel for chat, integrated terminal for CLI access.
 - **Critical**: also install the standalone CLI (see `install.md`) so `claude` works in the integrated terminal. The extension's bundled CLI doesn't add to PATH.
 - **Selection-injection awareness**: the built-in IDE MCP server **always** sends your current selection + active file path to Claude on every prompt. For sensitive files, add a `Read(./.env*)`-style deny rule — covers both the selection and the open-file notice.
-- **For the Windows VM**: same extension, same install steps. Cursor URI also works if you switch to Cursor on Windows.
 - **JetBrains is not used here** — skipping JetBrains plugin docs.

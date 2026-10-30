@@ -72,8 +72,6 @@ Run this when you come back to the playbook after a gap, before trusting it on a
 
 Compare every stamp against your installed version.
 
-**macOS / Linux:**
-
 ```bash
 installed=$(claude --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
 echo "installed: $installed"
@@ -88,26 +86,9 @@ git ls-files '*.md' | while read -r f; do
 done
 ```
 
-**Windows (PowerShell):**
+It reads **only the leading frontmatter block** and stops at its closing `---`. That matters more than it looks: a naive `grep '^verified_against:'` also matches the example stamps inside this file and the root `README.md`, which then show up as stale docs that don't exist.
 
-```powershell
-$installed = (claude --version) -replace '[^0-9.]',''
-"installed: $installed"
-Get-ChildItem -Recurse -Filter *.md | ForEach-Object {
-  $head = Get-Content $_.FullName -TotalCount 15
-  if ($head.Count -lt 2 -or $head[0] -ne '---') { return }
-  $end = [array]::IndexOf($head[1..($head.Count - 1)], '---')
-  if ($end -lt 0) { return }
-  $v = $head[1..$end] |
-    Where-Object { $_ -match '^verified_against:' } |
-    ForEach-Object { ($_ -split ':', 2)[1].Trim() }
-  if ($v -and $v -ne $installed) { "{0,-52} {1}" -f $_.FullName, $v }
-}
-```
-
-Both read **only the leading frontmatter block** and stop at its closing `---`. That matters more than it looks: a naive `grep '^verified_against:'` also matches the example stamps inside this file and the root `README.md`, which then show up as stale docs that don't exist.
-
-Neither command tells you a doc is *wrong* — only that nobody has checked it since. That's the point: it narrows the sweep to a candidate list.
+It doesn't tell you a doc is *wrong* — only that nobody has checked it since. That's the point: it narrows the sweep to a candidate list.
 
 ### 2. Check provenance before content
 

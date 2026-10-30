@@ -184,14 +184,9 @@ MCP servers can expose prompts as commands using the format:
 
 Discovered dynamically from connected servers. Covered in MCP docs (deferred).
 
-## Cross-OS notes
+## Platform-gated commands
 
-Most commands are OS-neutral. The few exceptions:
-
-- **`/desktop`** — macOS/Windows only.
-- **`/sandbox`** — supported platforms only (macOS Seatbelt, Linux/WSL2 bubblewrap; not native Windows).
-- **`/setup-bedrock`, `/setup-vertex`** — environment-gated.
-- **`/heapdump`** — writes to `~/Desktop` on Mac/Windows, `~` on Linux without a Desktop folder.
+A few commands only appear on some platforms: `/desktop` (macOS/Windows), `/sandbox` (where a sandbox exists — Seatbelt on macOS, bubblewrap on Linux/WSL2), `/setup-bedrock` and `/setup-vertex` (environment-gated).
 
 ## Practical applications for this repo
 
@@ -204,4 +199,3 @@ Useful default workflow patterns to internalize:
 - **Stuck**: `/rewind` to step back. Cheaper than `/compact` (preserves cache — see `../tools/prompt-caching.md`).
 - **End of long session**: `/recap` for a one-line summary you can paste into a PR description or work log.
 
-For the Windows VM workflow: `/desktop` if you adopt the Desktop app, otherwise everything else works the same. The few macOS/Windows-only commands are clearly labeled at runtime.

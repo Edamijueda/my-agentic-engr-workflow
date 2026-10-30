@@ -2,6 +2,12 @@
 
 Personal playbook for working efficiently with coding agents. When starting a new machine or a new project, come here first.
 
+## Why this exists
+
+One current source of agentic coding practice, so the same guidance isn't retyped in every project. New projects learn from it; when a project discovers something that works, it gets written back here.
+
+Agent-agnostic on purpose. Claude Code is the agent in use today and [`claude/`](claude/) holds its specifics, but the practice in [`shared/`](shared/) should survive a switch to whatever beats it later. Staying current is part of the job, not a nice-to-have — see [Freshness](#freshness).
+
 ## How to use
 
 | Situation | Start here |

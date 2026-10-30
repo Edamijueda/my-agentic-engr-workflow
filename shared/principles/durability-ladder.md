@@ -21,7 +21,7 @@ Two axes to track: **time boundaries** (clear, compact, restart) and **physical 
 ## How rules degrade across the ladder
 
 - **Conversation messages** are the most ephemeral. `/clear` wipes them. `/compact` summarizes them — you keep the gist but lose the exact text.
-- **Auto memory** (Claude's notes to itself) re-injects after `/compact` and reloads on session start. But it's stored under `~/.claude/projects/<project>/memory/` — **machine-local**. Switching to your Windows VM means starting auto memory from scratch.
+- **Auto memory** (Claude's notes to itself) re-injects after `/compact` and reloads on session start. But it's stored under `~/.claude/projects/<project>/memory/` — **machine-local**. On a new machine, auto memory starts from scratch.
 - **`CLAUDE.md` at the project root** is re-read from disk and re-injected after `/compact`. So it survives compaction without you doing anything. Commit it to git and it follows the repo across machines.
 - **Path-scoped rules** (`.claude/rules/*.md` with `paths:` frontmatter) and **nested `CLAUDE.md` files** are different — they load lazily when the agent touches matching files. They get **summarized away** by `/compact` and only reload the next time a matching file is read.
 - **`settings.json`** (permissions, hooks, env, autoUpdatesChannel, etc.) is hot-reloaded mid-session. Edits apply immediately for permissions/hooks, but `model` and `outputStyle` need a restart.
@@ -40,18 +40,18 @@ Two axes to track: **time boundaries** (clear, compact, restart) and **physical 
 
 ## The cross-machine boundary
 
-Things that **automatically cross** from Mac to Windows VM (if you commit them):
+Things that **cross to another machine** (if you commit them):
 - Project `CLAUDE.md`
 - `.claude/settings.json`
 - `.claude/rules/`
 - `.claude/agents/`
 - `.claude/skills/`
-- `.claude/hooks/` (scripts) — but POSIX vs PowerShell shell semantics differ; see [`enforcement-vs-influence.md`](enforcement-vs-influence.md) and [`claude/tools/hooks.md`](../../claude/tools/hooks.md).
+- `.claude/hooks/` (scripts) — committed and portable, but they assume whatever shell and tooling the machine has; see [`enforcement-vs-influence.md`](enforcement-vs-influence.md) and [`claude/tools/hooks.md`](../../claude/tools/hooks.md).
 
 Things that **don't cross**:
 - Auto memory (`~/.claude/projects/<project>/memory/`) — machine-local.
 - Personal `~/.claude/CLAUDE.md` and `~/.claude/settings.json` — machine-local.
-- Credentials (`~/.claude/.credentials.json` on Linux/Windows, Keychain on macOS) — re-auth on each machine.
+- Credentials (macOS Keychain; a `~/.claude/.credentials.json` file elsewhere) — re-auth on each machine.
 - Prompt cache — per-machine + per-directory.
 
 If you want your personal preferences to follow you across machines, manage them via a separate private dotfiles-style repo and `git pull` on each machine. See the README in this repo for the cross-OS scope statement.

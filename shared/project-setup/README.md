@@ -4,7 +4,7 @@ Checklists for preparing a project to work well with coding agents. Agent-agnost
 
 ## Current docs
 
-- **[`new-machine.md`](new-machine.md)** — once per machine. Install, authenticate, drop personal `~/.claude/settings.json`, install VS Code extension, verify. Includes cross-machine sync reality (what crosses Mac ↔ Windows VM and what doesn't).
+- **[`new-machine.md`](new-machine.md)** — once per machine. Install, authenticate, drop personal `~/.claude/settings.json`, install the VS Code extension, verify. Includes what follows the repo to another machine and what doesn't.
 - **[`new-project.md`](new-project.md)** — once per project. The three things that matter (memory, permissions, plan-mode default), optional scaffolding to defer until friction shows up, pre-flight checklist with literal commands in order.
 
 Run order: `new-machine.md` first (once per machine), then `new-project.md` per project.

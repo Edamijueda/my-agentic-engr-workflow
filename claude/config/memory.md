@@ -30,7 +30,7 @@ Four locations, loaded broadest → most specific. Later files appear *after* ea
 | Scope | Location | Notes |
 | --- | --- | --- |
 | **Managed policy** | macOS: `/Library/Application Support/ClaudeCode/CLAUDE.md`<br>Linux/WSL: `/etc/claude-code/CLAUDE.md`<br>**Windows: `C:\Program Files\ClaudeCode\CLAUDE.md`** | Deployed by IT/DevOps. Cannot be excluded by `claudeMdExcludes`. |
-| **User** | `~/.claude/CLAUDE.md` | Personal preferences across all projects. Same path on macOS and Windows (under user home). |
+| **User** | `~/.claude/CLAUDE.md` | Personal preferences across all projects. |
 | **Project** | `./CLAUDE.md` or `./.claude/CLAUDE.md` | Team-shared via git. **This is what we have at the repo root.** |
 | **Local** | `./CLAUDE.local.md` | Personal project-specific; `.gitignore` it. |
 
@@ -92,7 +92,7 @@ Useful patterns:
 Claude only reads `CLAUDE.md`. If a repo already uses `AGENTS.md` (or `.cursorrules`, `.devin/rules/`, `.windsurfrules`):
 
 - Create `CLAUDE.md` that imports it: `@AGENTS.md` on its own line, then any Claude-specific additions.
-- Or symlink: `ln -s AGENTS.md CLAUDE.md`. **On Windows, symlinks need Administrator or Developer Mode** — prefer the `@AGENTS.md` import there.
+- Or symlink: `ln -s AGENTS.md CLAUDE.md`. The `@AGENTS.md` import is the more portable choice.
 - `/init` reads `AGENTS.md` and other tool configs when generating a starter `CLAUDE.md`.
 
 ## `/init` — generate a starter
@@ -179,16 +179,8 @@ CLI flag worth knowing: `--setting-sources` (excluding `local` skips `CLAUDE.loc
 - For instructions that must happen at a fixed moment, switch to a hook — CLAUDE.md is not enforcement.
 - For system-prompt-level instructions, `--append-system-prompt` works but must be passed every invocation (scripts only, not interactive).
 
-## Cross-OS gotchas
-
-- **Managed policy path differs by OS** (table above).
-- **Windows symlinks need elevation.** Use `@AGENTS.md` import instead of `ln -s`.
-- User and project paths (`~/.claude/CLAUDE.md`, `./.claude/CLAUDE.md`, etc.) work the same on both — just remember `~` resolves to the OS-specific home.
-- Auto memory is **machine-local** — Claude Code never syncs it. Worktrees and subdirs of one checkout share a dir; the macOS host and the Windows VM each get their own, and the path-derived names won't even match. If you want them to line up, pin `CLAUDE_CODE_PROJECT_DIR_NAME` on both (see above) and sync the folder yourself.
-
 ## Practical applications for this repo
 
 - `CLAUDE.md` at the root already covers project context — keep it under 200 lines and review periodically.
-- If `claude/setup/` ends up large, split into `.claude/rules/setup-macos.md` and `.claude/rules/setup-windows.md` with `paths:` frontmatter on the install scripts they're paired with (once we have any).
+- If a directory here grows large, split it into `.claude/rules/` files with `paths:` frontmatter so each loads only when Claude touches the files it describes.
 - `user_profile.md` in `~/.claude/projects/.../memory/` is fine where it is — it's personal and won't sync to the public repo.
-- When jumping to the Windows VM: don't expect auto memory to come with you; CLAUDE.md will. That's the whole point of the public-repo + private-memory split.

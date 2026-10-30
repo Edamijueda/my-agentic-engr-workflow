@@ -63,9 +63,3 @@ Revisit only if the triggering condition becomes true.
 | Enterprise (IAM, Team, admin, Bedrock, Google Cloud, Foundry, proxies, GHES) | Out of scope for solo work. Provider-specific caveats get captured inline where they affect a documented behaviour, not as standalone docs. |
 | JetBrains | Out of scope — VS Code only. |
 
-## Cross-OS debt
-
-The original sweep flagged Windows specifics to capture during deep dives. Status:
-
-- **Done:** install paths (PowerShell/CMD), Bash tool's dependency on Git for Windows, managed-settings paths, sandbox differences (Seatbelt vs. bubblewrap vs. none on native Windows), symlink elevation for `AGENTS.md`.
-- **Open:** nothing known. The Windows VM has not been exercised against the current playbook since the refresh — treat unflagged Windows claims as verified by reading, not by running.

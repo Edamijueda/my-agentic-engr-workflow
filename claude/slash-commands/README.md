@@ -12,6 +12,3 @@ Everything typed with `/` at the start of a message. Three sources: built-in com
 
 Full skill mechanics — `SKILL.md` format, frontmatter reference, lifecycle, `disable-model-invocation`, dynamic `!\`command\`` injection, evals — are covered in **[`../tools/skills.md`](../tools/skills.md)**.
 
-## Cross-OS reminder
-
-Most commands are OS-neutral; a few (`/desktop`, `/sandbox`, `/heapdump`, `/setup-bedrock`, `/setup-vertex`) are platform- or environment-gated. Flagged inline in `built-in.md`.

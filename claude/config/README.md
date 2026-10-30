@@ -45,12 +45,3 @@ These belong in `config/` eventually but are deferred to later issues:
 
 When we draft each of these, lift the corresponding section out of `settings.md` and let `settings.md` link to it instead.
 
-## Cross-OS reminder
-
-Every one of these mechanisms works on both macOS and Windows, but paths differ. Highlights captured inline in each doc:
-
-- Managed-policy paths.
-- `~/.claude` → `%USERPROFILE%\.claude` on Windows.
-- Sandbox available on macOS (Seatbelt) and Linux/WSL2 (bubblewrap); **not on native Windows** — compensate with stricter permission rules.
-- Windows symlinks need elevation; prefer `@AGENTS.md` import to `ln -s`.
-- `defaultShell: "powershell"` + `CLAUDE_CODE_USE_POWERSHELL_TOOL=1` if Git for Windows isn't installed.
