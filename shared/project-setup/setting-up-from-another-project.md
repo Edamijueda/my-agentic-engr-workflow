@@ -17,22 +17,13 @@ This doc is the agent-runnable counterpart to [`new-project.md`](new-project.md)
 
 Before writing anything, gather context:
 
-1. **Read the target project's root files**: `README.md`, `CLAUDE.md` (if it exists), `pyproject.toml` / `package.json` / `go.mod` / `Cargo.toml` / etc., `.env.example`, top-level `docs/` if present.
+1. **Read the target project's root files**: `README.md`, `CLAUDE.md` (if it exists), whichever build manifest is present, `.env.example`, top-level `docs/` if present.
 2. **List `.claude/`** in the target if it exists: `ls -la .claude/ 2>/dev/null` — note any existing `settings.json`, `agents/`, `skills/`, `rules/`, `hooks/`.
-3. **Detect project type** from files present:
+3. **Take the real commands from the manifest.** Read the scripts block, plugin config, or task definitions — not the ecosystem's conventional commands. Projects override those constantly.
 
-| File present | Project type | Settings template to use |
-| --- | --- | --- |
-| `pyproject.toml`, `requirements.txt`, `setup.py` | **Python** | "Python template" below |
-| `package.json` | **Node / JS / TS** | "Node template" below |
-| `go.mod` | **Go** | "Go template" below |
-| `Cargo.toml` | **Rust** | "Rust template" below |
-| `Gemfile` | **Ruby** | "Generic template" + adapt |
-| `pom.xml`, `build.gradle` | **Java / Kotlin** | "Generic template" + adapt |
-| None of the above | **Generic** | "Generic template" below |
-
+   You need: install, build, test, lint, run. Note which are genuinely absent rather than inventing them.
 4. **Identify the secrets / sensitive paths** the project uses: read `.env.example`, `.gitignore`, and any `secrets/` or `credentials/` dirs.
-5. **Identify any platform constraints** in the README or CLAUDE.md (Python version locks, Windows-only modules, etc.).
+5. **Identify any hard constraints** in the README or CLAUDE.md — version locks, a service that must be running, anything marked MUST or NEVER.
 
 Write a brief one-paragraph summary of what you found before proceeding.
 
@@ -60,14 +51,14 @@ Write a brief one-paragraph summary of what you found before proceeding.
 
 ## Build, test, run
 
-- Install deps: `[detected command — e.g., uv sync, npm install, go mod download]`
+- Install deps: `[the command the manifest actually defines]`
 - Run tests: `[detected command]`
 - Lint: `[detected command if present]`
 - Run locally: `[detected command if present]`
 
 ## Conventions
 
-- [Python version / Node version / etc. if locked]
+- [Language/runtime version, if locked]
 - [Naming conventions observed in src/]
 - [Error handling patterns observed]
 - [Test layout — co-located vs separate dir]
@@ -124,53 +115,15 @@ Create `.claude/settings.json` with deny rules for secrets and high-blast-radius
 }
 ```
 
-### Project-type-specific additions
+### Add what this project actually needs
 
-Add the matching block to the `deny` array. For multiple matches (e.g. Python + Node monorepo), add both.
+The universal block covers secrets and destructive git. Beyond it, add rules only for what you observed:
 
-**Python template additions:**
-```
-"Read(./*.pem)",
-"Read(./venv/**)",
-"Bash(pip install --upgrade pip)"
-```
-And to `ask`:
-```
-"Bash(pip install *)"
-```
-*(Reason: lockfile-aware install commands like `uv sync` should still pass through — add them to `.claude/settings.local.json` allow list. See Step 3.)*
+- **A publish or deploy command** in the manifest (`npm publish`, `mvn deploy`, `cargo publish`, …) → add to `ask`.
+- **An install command that isn't lockfile-aware** → add to `ask`, and put the lockfile-aware one in the allow list in Step 3.
+- **Generated or vendored directories** the project treats as read-only → add to `deny`.
 
-**Node template additions:**
-```
-"Read(./.env.local)",
-"Read(./.env.production)",
-"Read(./.env.development.local)"
-```
-And to `ask`:
-```
-"Bash(npm publish *)",
-"Bash(pnpm publish *)"
-```
-
-**Go template additions:**
-```
-"Read(./*.pem)"
-```
-And to `ask`:
-```
-"Bash(go install *)"
-```
-
-**Rust template additions:**
-```
-"Read(./target/.fingerprint/**)"
-```
-And to `ask`:
-```
-"Bash(cargo publish *)"
-```
-
-**Generic template:** the universal block alone is fine. Add project-specific paths the user identifies during pre-flight.
+Don't add rules for commands the project doesn't use. A deny list full of irrelevant entries is noise that makes the real rules harder to review.
 
 ### Project-specific secrets
 
@@ -201,52 +154,18 @@ Create `.claude/settings.local.json` with the common safe-command allows for the
 }
 ```
 
-### Project-type-specific allows
+### Add this project's build and test commands
 
-Add the matching block to `allow`:
+Take them from the manifest you read during pre-flight, exactly as the project defines them:
 
-**Python:**
-```
-"Bash(uv *)",
-"Bash(uv sync*)",
-"Bash(uv run *)",
-"Bash(pytest *)",
-"Bash(python -m *)",
-"Bash(ruff *)",
-"Bash(mypy *)"
+```json
+"Bash(<test command> *)",
+"Bash(<build command> *)",
+"Bash(<lint command> *)"
 ```
 
-**Node:**
-```
-"Bash(npm run *)",
-"Bash(npm test*)",
-"Bash(npm install)",
-"Bash(npm ci)",
-"Bash(npx *)",
-"Bash(node *)",
-"Bash(pnpm run *)",
-"Bash(pnpm install)"
-```
+Allow the commands that are safe to run unattended and that you'll run often — test, build, lint, typecheck, and the lockfile-aware install. Leave anything that publishes, deploys, or mutates shared state out of the allow list.
 
-**Go:**
-```
-"Bash(go test *)",
-"Bash(go build *)",
-"Bash(go run *)",
-"Bash(go vet *)",
-"Bash(go fmt *)",
-"Bash(go mod *)"
-```
-
-**Rust:**
-```
-"Bash(cargo test *)",
-"Bash(cargo build *)",
-"Bash(cargo run *)",
-"Bash(cargo check *)",
-"Bash(cargo clippy *)",
-"Bash(cargo fmt *)"
-```
 
 ## Step 4: What NOT to do
 
@@ -268,7 +187,7 @@ After you've applied the steps, write a summary in your response with this struc
 ```
 ## Setup summary
 
-**Project type detected:** [Python / Node / etc.]
+**Stack detected:** [language/framework, and the manifest you read it from]
 
 **Files written:**
 - CLAUDE.md — [created from template / additions proposed (not written) / left untouched because already exists]

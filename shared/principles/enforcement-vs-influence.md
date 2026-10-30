@@ -10,7 +10,7 @@ Permissions are evaluated by Claude Code itself before tool calls execute. A `Re
 
 Hooks run as code in your shell. A `PreToolUse` hook exiting with code 2 blocks the tool call before permission rules are even evaluated. The hook can inspect the full tool input (the exact Bash command, the exact file path, the model the subagent is using) and make a decision your shell logic controls.
 
-Sandboxing enforces at the OS level (Seatbelt on macOS, bubblewrap on Linux/WSL2 — not available on native Windows). It applies to every subprocess the agent spawns, including arbitrary Python scripts or Node tools, not just the agent's direct tool calls.
+Sandboxing enforces at the OS level (Seatbelt on macOS, bubblewrap on Linux/WSL2). It applies to every subprocess the agent spawns, including arbitrary Python scripts or Node tools, not just the agent's direct tool calls.
 
 ## The decision pattern
 

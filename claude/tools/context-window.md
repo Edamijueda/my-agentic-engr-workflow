@@ -147,4 +147,3 @@ Two consequences:
 - **Cross-cutting principles** ("be concise", "don't add error handling for impossible scenarios") → `~/.claude/CLAUDE.md` (loads everywhere) or this repo's root `CLAUDE.md`.
 - **Section-specific guidance** ("when editing setup scripts, use OS-conditional shebangs") → `.claude/rules/setup.md` with `paths: ["claude/setup/**", "shared/project-setup/**"]`. Saves context on every non-setup session.
 - **Once we start drafting subagent definitions** (`.claude/agents/`): the built-in Explore/Plan skipping CLAUDE.md is the model — custom agents should also skip CLAUDE.md unless they genuinely need project context.
-- **For the Windows VM**: same context model applies; nothing OS-specific in how context fills or compacts.

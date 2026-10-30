@@ -22,8 +22,6 @@ Four scopes, **highest precedence first**:
 | 4 | **Project shared** | `.claude/settings.json` | Committed to git, team-shared. |
 | 5 | **User** | `~/.claude/settings.json` | Personal, all projects. |
 
-On Windows, `~/.claude` = `%USERPROFILE%\.claude`. Same logical layout, different physical path.
-
 **Scalar values** (booleans, strings, numbers): higher scope wins.
 **Array values** (`permissions.allow`, `sandbox.filesystem.allowWrite`, etc.): **merged and deduplicated across scopes**, not replaced. So a managed `allowWrite: ["/opt/tools"]` plus user `allowWrite: ["~/.kube"]` yields both.
 
@@ -51,17 +49,12 @@ Multiple delivery channels, all loading the **same JSON shape** (`managed-settin
 
 1. **Server-managed** — from claude.ai admin console.
 2. **MDM / OS policy:**
-   - macOS: `com.anthropic.claudecode` preferences domain (plist), deployed via Jamf, Kandji, etc.
-   - Windows: `HKLM\SOFTWARE\Policies\ClaudeCode` registry key (Group Policy / Intune); `HKCU\SOFTWARE\Policies\ClaudeCode` for user-scoped policy (lowest priority in the managed tier).
+   - macOS: `com.anthropic.claudecode` preferences domain (plist), deployed via Jamf, Kandji, etc. Other platforms use their own policy mechanism.
 3. **File-based:**
-   - macOS: `/Library/Application Support/ClaudeCode/managed-settings.json`
-   - Linux / WSL: `/etc/claude-code/managed-settings.json`
-   - Windows: `C:\Program Files\ClaudeCode\managed-settings.json`
+   - macOS: `/Library/Application Support/ClaudeCode/managed-settings.json` (Linux: `/etc/claude-code/`)
    - Also supports a `managed-settings.d/` drop-in directory (systemd convention: base file first, drop-ins merged in alphabetical order; arrays concatenate-dedupe, objects deep-merge). Use numeric prefixes (`10-telemetry.json`, `20-security.json`) to control order.
 
-> **Windows gotcha:** the legacy path `C:\ProgramData\ClaudeCode\managed-settings.json` was dropped in **v2.1.75**. If you ever helped a client deploy there, move to `C:\Program Files\ClaudeCode\`.
-
-**Within the managed tier**, precedence is: server-managed > MDM/OS > file-based (drop-in + base) > HKCU registry. Only one managed source loads — they do not merge across tiers.
+**Within the managed tier**, precedence is: server-managed > MDM/OS > file-based (drop-in + base). Only one managed source loads — they do not merge across tiers.
 
 **Managed parsing is tolerant**: an invalid entry is stripped + logged, the rest enforces. User/project/local files are strict — a single bad value rejects the whole file.
 
@@ -251,19 +244,11 @@ Long subsection in the docs; here are the keys most likely to matter. Full docs:
 ```
 
 Notes:
-- Sandbox works on **macOS, Linux, WSL2**. Native Windows lacks an equivalent — Bash runs unsandboxed.
+- Sandbox works on **macOS** (Seatbelt) and **Linux/WSL2** (bubblewrap).
 - `failIfUnavailable: true` exits hard if sandbox can't start, instead of silently running unsandboxed.
 - Path prefixes: `/` absolute, `~/` home-relative, `./` or no prefix = project root (project settings) or `~/.claude` (user settings). Older `//path` for absolute still works.
 - Sandbox merges with permission rules (`Edit`/`Read` allow/deny paths are folded into filesystem rules; `WebFetch(domain:...)` folds into network).
 - macOS-only: `allowAppleEvents` (needed for `open`/`osascript`/browser-opens), `enableWeakerNetworkIsolation` (for Go-based tools with MITM proxies).
-
-## Cross-OS gotchas
-
-- **Path resolution**: `~/.claude` = `%USERPROFILE%\.claude` on Windows. Same JSON, OS-specific path.
-- **Managed-settings paths differ per OS** (table above). The Windows legacy `C:\ProgramData\ClaudeCode\` path is gone as of v2.1.75.
-- **`defaultShell`**: set to `"powershell"` (and `CLAUDE_CODE_USE_POWERSHELL_TOOL=1` env var) to route `!` commands through PowerShell on Windows. Defaults to `"bash"`. Pair this with the Git-for-Windows recommendation noted in `index.md`.
-- **`wslInheritsWindowsSettings`**: Windows-managed only. Makes WSL read managed settings from the Windows policy chain too. Useful for clients who manage Windows policy but devs work in WSL.
-- **Sandbox**: macOS uses Seatbelt, Linux/WSL2 uses bubblewrap (`bwrapPath` for managed override), native Windows lacks an equivalent.
 
 ## Minimum useful `settings.json` for solo use
 
@@ -301,7 +286,6 @@ The `$schema` line gives autocomplete + inline validation in any editor that und
 
 - The current `CLAUDE.md` at the root is enough for the playbook itself — no `.claude/settings.json` needed yet. Add one when we start enforcing things (e.g. denying access to `~/.claude/projects/.../memory/` from this repo, since that's outside the repo but reachable via `Read`).
 - For client projects: drop a checked-in `.claude/settings.json` with `permissions.deny` for `.env` files and high-blast-radius commands. Use `.claude/settings.local.json` for personal toggles (theme, verbose, vim mode).
-- On the Windows VM: add `"defaultShell": "powershell"` to `~/.claude/settings.json` so `!` commands work even when Git for Windows isn't installed yet.
 - When we eventually have hooks worth keeping, put them in user-scope `settings.json` so they follow you across projects (only project-specific hooks belong in `.claude/settings.json`).
 
 ## When to use which file

@@ -439,21 +439,12 @@ Decision tree:
 | Quick targeted change | Main conversation |
 | Latency matters | Main conversation (subagents have startup overhead) |
 
-## Cross-OS notes
-
-- **Hook script shells**: PowerShell hooks need `shell: powershell` (see `hooks.md`).
-- **Subagent file locations**: same paths on both OSes (`~/.claude/agents/` resolves to `%USERPROFILE%\.claude\agents\` on Windows).
-- **Transcript paths**: `~/.claude/projects/...` on both.
-- **`isolation: worktree`** works on both — needs git installed.
-- **Memory directory paths**: same — `~/.claude/agent-memory/<name>/` per OS.
-
 ## Practical applications for this repo
 
 - **Default to delegating research-heavy tasks**. "Find every place we use the old auth pattern" → Explore subagent. Save the parent context for synthesis.
 - **For client projects, build a domain subagent** with `memory: project` so it accumulates project conventions across sessions. Check the memory dir into git (`.claude/agent-memory/`). Personal notes go in `.claude/agent-memory-local/` (gitignored).
 - **For the playbook itself** (when we have it): a `playbook-curator` subagent with `tools: Read, Grep, Glob, Edit` and `memory: project` could maintain `shared/principles/` as we add new lessons.
 - **`/fork` is the cheapest parallel approach**: same prompt cache as main, full conversation context. Use when you want to test two refactor approaches without redoing setup.
-- **For the Windows VM**: subagent files are not synced between machines (they live in `~/.claude/agents/` outside the repo). Check team-wide subagents into `.claude/agents/` in this or any project repo and they follow the codebase.
 
 ## Example subagents (paste-ready)
 
@@ -552,4 +543,4 @@ fi
 exit 0
 ```
 
-`chmod +x` on macOS/Linux. On Windows, write PowerShell + add `shell: powershell` to the hook.
+Remember `chmod +x`.

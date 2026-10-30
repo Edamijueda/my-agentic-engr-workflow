@@ -370,20 +370,13 @@ Then `/reload-plugins` and ask Claude to `evaluate my <name> skill with skill-cr
 | Frontmatter parse error | `claude --debug` shows the YAML error. Skill body still loads with empty metadata — `/skill-name` works but Claude has no description to match against. |
 | Descriptions cut short | `/doctor` shows which. Raise `skillListingBudgetFraction`, set low-priority skills to `name-only`, or trim source descriptions. |
 
-## Cross-OS notes
-
-- **Windows shell** in `!` injection: set `shell: powershell` in frontmatter. Requires `CLAUDE_CODE_USE_POWERSHELL_TOOL=1` (unlike hook PowerShell, which doesn't need it — hooks spawn PS directly).
-- **Skill discovery is OS-neutral.** Path conventions (`~/.claude/skills/` on Mac, `%USERPROFILE%\.claude\skills\` on Windows) — same as everything else.
-- **`${CLAUDE_SKILL_DIR}`** in shell commands is OS-correct on whichever platform the skill runs on.
-
 ## Practical applications for this repo
 
 When we start drafting reusable workflows (next phase of the playbook), strong skill candidates:
 
 - **`/playbook-search <topic>`** — `disable-model-invocation: false`, lets Claude grep the repo for related principles. No side effects.
 - **`/new-workflow <name>`** — `disable-model-invocation: true`, creates the workflow scaffold. Side effect (file creation).
-- **`/cross-os-check`** — auto-loads on edits to setup scripts via `paths:`. Reminds Claude to cover both macOS and Windows.
+- **`/stamp-check`** — auto-loads on edits to stamped docs via `paths:`. Reminds Claude to re-verify the claim and update the freshness stamp in the same commit.
 
 For the user profile in `~/.claude/`: a personal `/cleanup-branches` skill with `disable-model-invocation: true` and `allowed-tools: Bash(git branch *) Bash(git push *)` would beat memorizing the workflow.
 
-For the Windows VM: skills are not synced (they live in the OS-local `~/.claude/skills/` outside this repo). Consider checking team-wide skills into a private repo and `git pull`-ing on each machine, same approach as private memory.

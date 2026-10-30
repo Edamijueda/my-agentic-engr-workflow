@@ -24,44 +24,17 @@ The full mechanics live in [`claude/setup/install.md`](../../claude/setup/instal
 
 ---
 
-## Step 1: Pick the install method
+## Step 1: Install
 
-| OS | Recommended | Why |
-| --- | --- | --- |
-| **macOS** | Native installer (`curl`) | Auto-updates, simplest path. |
-| **Windows native** | Native installer (PowerShell `irm`) | Auto-updates. **No sandboxing.** Git for Windows optional (enables Bash tool). |
-| **Windows + WSL 2** | Native installer inside WSL | Sandboxing supported. Use if you need sandboxed Bash. |
-| **Linux** | Native installer or apt/dnf/apk | Native auto-updates; package manager uses system upgrade. |
-
-Full decision tree + Homebrew / WinGet / npm alternatives: [`claude/setup/install.md`](../../claude/setup/install.md).
-
-### Quick install commands
-
-**macOS / Linux / WSL:**
 ```bash
 curl -fsSL https://claude.ai/install.sh | bash
+claude --version
+claude doctor          # health check
 ```
 
-**Windows PowerShell:**
-```powershell
-irm https://claude.ai/install.ps1 | iex
-```
+The native installer auto-updates in the background. Add `-s stable` to the install command to sit ~1 week behind `latest` and skip regression releases — the lower-friction default.
 
-**Windows CMD:**
-```batch
-curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd
-```
-
-> **Identifying your Windows shell:** prompt shows `PS C:\` in PowerShell, `C:\` (no `PS`) in CMD. `'irm' is not recognized` = you're in CMD. `The token '&&' is not a valid statement separator` = you're in PowerShell.
-
-### Verify install
-
-```bash
-claude --version       # should print a version
-claude doctor          # detailed health check
-```
-
-If `claude` is not found, see [`claude/setup/install.md`](../../claude/setup/install.md) → "Verify install."
+Alternatives (Homebrew, npm) and update controls: [`claude/setup/install.md`](../../claude/setup/install.md).
 
 ---
 
@@ -89,7 +62,7 @@ Full auth flow incl. Bedrock/Vertex/Foundry, `apiKeyHelper`, and the Pro+API-key
 
 ## Step 3: Personal day-1 settings (`~/.claude/settings.json`)
 
-This is the file that follows YOU across all your projects on this machine. **Doesn't sync to your other machines** — write it on each one.
+This is the file that follows YOU across all your projects on this machine. It does **not** sync to your other machines — write it on each one.
 
 Drop this in:
 
@@ -206,7 +179,7 @@ The agent should answer using its environment + git context block. If it can't, 
 
 ## Cross-machine reality
 
-What automatically follows you when you switch from Mac to Windows VM (or any other machine):
+What follows the repo to another machine, and what doesn't:
 
 | Item | Syncs across machines? | Lives where |
 | --- | --- | --- |
@@ -247,42 +220,10 @@ Calendar a renewal before the year is up.
 
 ---
 
-## Cross-OS specifics
-
-### macOS
-
-- Credentials stored in Keychain — no manual file.
-- Sandbox via Seatbelt.
-- Default install: native `curl | bash`. Auto-updates.
-
-### Windows native
-
-- Credentials in `%USERPROFILE%\.claude\.credentials.json` (user-profile ACLs).
-- **No sandbox** — compensate with stricter `permissions.deny` rules at the project level.
-- Bash tool requires [Git for Windows](https://git-scm.com/downloads/win). Without it, Claude Code falls back to the PowerShell tool.
-- If Git Bash is installed but Claude Code can't find it, set in `~/.claude/settings.json`:
-  ```json
-  { "env": { "CLAUDE_CODE_GIT_BASH_PATH": "C:\\Program Files\\Git\\bin\\bash.exe" } }
-  ```
-
-### Windows + WSL 2
-
-- Sandbox supported (bubblewrap).
-- Install the **Linux** installer inside the WSL terminal (`curl | bash`), not from PowerShell or CMD.
-- Auto-update works normally.
-
-### Linux
-
-- Credentials in `~/.claude/.credentials.json` (mode `0600`).
-- Sandbox via bubblewrap.
-- Package managers (apt/dnf/apk) available with signed repos but no auto-update.
-
----
-
 ## See also
 
 - [`new-project.md`](new-project.md) — once per project (memory + permissions + plan-mode default).
-- [`claude/setup/install.md`](../../claude/setup/install.md) — full install reference (channels, version pinning, binary integrity, uninstall).
+- [`claude/setup/install.md`](../../claude/setup/install.md) — install paths, update channels, version pinning.
 - [`claude/setup/authentication.md`](../../claude/setup/authentication.md) — full auth reference (6-tier precedence, `apiKeyHelper`, the Pro+API-key gotcha).
 - [`claude/setup/vs-code.md`](../../claude/setup/vs-code.md) — VS Code extension in detail (built-in MCP server, settings, URI handler).
 - [`shared/principles/durability-ladder.md`](../principles/durability-ladder.md) — what crosses machines, what doesn't.

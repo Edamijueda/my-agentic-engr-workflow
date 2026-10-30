@@ -197,7 +197,6 @@ The cache is **effectively scoped to one machine and one directory**. The system
 That includes:
 
 - **Worktrees of the same repo** — each has its own CWD = its own cache.
-- **The macOS host vs the Windows VM** — completely separate caches by definition (different platform + OS version in the system prompt). When you switch from Mac to Windows mid-task, the Windows session rebuilds from zero.
 - **Sequential sessions in the same directory** share the prefix **only when the git status snapshot at startup matches** (system prompt also captures branch + recent commits). A new commit between two sessions in the same dir → cache miss on session start.
 
 **Parallel sessions in the same directory** build matching prefixes and read each other's cache.
@@ -250,14 +249,12 @@ Set in `settings.json` → `env` block, or in managed settings for org-wide.
 | **Watch the cache numbers when something feels slow.** | Statusline with `current_usage` is the easiest live view. |
 | **Don't resume long sessions immediately after a Claude Code upgrade.** | Worst-case turn — entire history reprocessed under new system prompt. |
 
-## Cross-OS notes
+## Cache is per machine and per directory
 
-- **Each machine has its own cache.** Switching from the Mac to the Windows VM mid-task means rebuilding from zero on the Windows side. Not a per-OS misconfiguration; it's structural.
-- **Worktrees split cache.** If you use `--worktree` for parallel sessions on one machine, each worktree builds its own prefix.
-- **Auto-update timing**: on Windows (WinGet, manual updater) the upgrade-then-resume cost only hits when you actually run `winget upgrade Anthropic.ClaudeCode`. On Mac (Homebrew, manual) same. On the native installer (auto-updating), the cost arrives whenever you next launch after a background download. Set `DISABLE_AUTOUPDATER=1` if you want to control timing.
+- **Worktrees split the cache.** Each `--worktree` session has its own CWD, so each builds its own prefix.
+- **Auto-update timing.** The native installer downloads in the background and applies on next launch, so the uncached first turn arrives whenever you next start Claude Code. `DISABLE_AUTOUPDATER=1` if you want to choose when.
 
 ## Practical applications for this repo
 
 - For the playbook itself we're rarely hammering the cache — short docs sessions, mostly. Worth knowing when we start drafting longer interactive workflows.
 - When we add hooks (`claude/config/hooks.md` later), the cache implications of `disableAllHooks` vs adding a bare-tool deny rule will matter for the writeup.
-- The Mac → Windows VM cache-from-zero is worth noting in `claude/setup/` whenever we draft the cross-OS install steps — set expectations that the first session on a fresh OS is the slow one.

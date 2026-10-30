@@ -110,7 +110,7 @@ Two memory systems:
 
 Auto-memory is Claude's own notes — build commands it learned, debugging insights, recurring issues. Look at it occasionally with `/memory` to see what Claude has saved.
 
-For things you want to follow you to your Windows VM, put them in **`CLAUDE.md`** (committed). Auto-memory does not cross machines.
+For anything you want to follow the repo to another machine, put it in **`CLAUDE.md`** (committed). Auto memory does not cross machines.
 
 ## Quality checks
 

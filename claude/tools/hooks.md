@@ -189,7 +189,7 @@ HTTP error handling differs from command hooks: non-2xx / connection failure / t
 When does each apply?
 
 - **Exec form** = `args` is set. No shell. `command` resolved as an executable on `PATH`, spawned directly with `args` as the argument vector. Path placeholders substitute as plain strings — **no shell tokenization**, so paths with spaces and special characters need no quoting. Use whenever you reference a `${CLAUDE_*}` path placeholder.
-- **Shell form** = `args` omitted. Goes through `sh -c` (macOS/Linux), Git Bash (Windows), or PowerShell (Windows when Git Bash isn't installed). Use when you need pipes, `&&`, redirects, globs, or env var expansion.
+- **Shell form** = `args` omitted. Goes through `sh -c`. Use when you need pipes, `&&`, redirects, globs, or env var expansion.
 
 ```json
 { "type": "command", "command": "node",
@@ -201,7 +201,7 @@ When does each apply?
   "command": "node \"${CLAUDE_PLUGIN_ROOT}\"/scripts/format.js --fix" }
 ```
 
-> **Windows gotcha**: exec form needs a real executable. `.cmd` / `.bat` shims (npm, npx, eslint, etc. under `node_modules/.bin`) **cannot** be spawned without a shell. Either invoke `node` + script directly (`"command": "node", "args": ["${CLAUDE_PLUGIN_ROOT}/node_modules/eslint/bin/eslint.js"]`) or use shell form.
+> **Exec form needs a real executable.** A wrapper script under `node_modules/.bin` may not be spawnable directly — invoke `node` plus the script path (`"command": "node", "args": ["${CLAUDE_PLUGIN_ROOT}/node_modules/eslint/bin/eslint.js"]`), or use shell form.
 
 > If `command` in exec form is a bare name with whitespace alongside `args`, Claude Code warns at startup — `node script.js` is not a valid executable name.
 
@@ -477,30 +477,16 @@ Use when verification needs to inspect actual files or test output, not just the
 
 > **Experimental.** Behavior and config may change. Prefer command hooks for production.
 
-## Cross-OS notes
+## Hook execution environment
 
-### Windows shell
+Command hooks run in their own session **without a controlling terminal**. They can't open `/dev/tty` or emit escape sequences directly. Use instead:
 
-Set `"shell": "powershell"` on the individual hook — hooks spawn PowerShell directly, doesn't require `CLAUDE_CODE_USE_POWERSHELL_TOOL`. Auto-detects `pwsh.exe` (PS 7+) → `powershell.exe` (5.1) fallback.
+- `systemMessage` JSON field — surfaces a message to the user.
+- `terminalSequence` JSON field — desktop notifications, bell, window title.
 
-```json
-{ "type": "command", "shell": "powershell",
-  "command": "Write-Host 'File written'" }
-```
+### `terminalSequence` allowlist
 
-For exec form on Windows: see the **`.cmd` / `.bat` shim gotcha** above. Use `node` + script-path pattern, or shell form.
-
-### macOS / Linux session isolation
-
-Command hooks run in their own session **without a controlling terminal**. Can't open `/dev/tty` or send escape sequences directly. Use:
-- `systemMessage` JSON field to surface a message to the user.
-- `terminalSequence` JSON field for desktop notifications / bell / window title.
-
-Windows has no `/dev/tty` either — same path applies.
-
-### `/dev/tty` replacement (`terminalSequence`)
-
-Allowlist: OSC `0`, `1`, `2` (window/icon titles), OSC `9` (iTerm2/ConEmu/Windows Terminal/WezTerm notifications + `9;4` taskbar progress), OSC `99` (Kitty), OSC `777` (urxvt/Ghostty/Warp), bare BEL. Anything else (CSI cursor/color, OSC palette, OSC 8 hyperlinks, OSC 52 clipboard, OSC 1337) is rejected.
+OSC `0`, `1`, `2` (window/icon titles), OSC `9` (notifications + `9;4` taskbar progress), OSC `99` (Kitty), OSC `777` (urxvt/Ghostty/Warp), bare BEL. Anything else — CSI cursor/color, OSC palette, OSC 8 hyperlinks, OSC 52 clipboard, OSC 1337 — is rejected.
 
 Build escape strings with `printf` octal escapes so control bytes never appear on the command line, then `jq -n --arg` to build JSON.
 
@@ -724,5 +710,4 @@ exit 0
   - `SessionStart` hook in `~/.claude/settings.json` that loads current branch + recent commits as context (universally useful).
   - `PreToolUse` deny for `Bash(rm -rf *)` and `Bash(curl http*)` in user-scope settings.
   - `InstructionsLoaded` hook (debug only) when troubleshooting why a rule isn't loading.
-- For the Windows VM: the **`.cmd` / `.bat` shim gotcha** is the most likely paper cut when writing cross-OS hook examples. Note in `claude/setup/` whenever we add Windows install steps.
 - Personal cache-aware tweak: any hook returning `additionalContext` in `PostToolUse` will inject content into the conversation, which doesn't itself invalidate the prompt cache (it's appended). But denying a bare tool name in settings mid-session **does** invalidate (see `claude/tools/prompt-caching.md`). Worth noting next to any "from now on" workflow.

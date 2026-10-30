@@ -44,7 +44,7 @@ Grouped by purpose. **P** = permission required.
 | Tool | P | Notes |
 | --- | --- | --- |
 | `Bash` | Yes | Each command in a fresh process. `cd` carries over within project + `--add-dir` scopes. |
-| `PowerShell` | Yes | Native PowerShell. Cross-OS gating below. |
+| `PowerShell` | Yes | Native PowerShell. Opt-in outside Windows — see below. |
 | `Monitor` | Yes | Background watch — feeds each output line to Claude. Uses Bash permission rules. |
 
 ### Web
@@ -249,36 +249,9 @@ Permission rules use `Edit(path)` format. `Edit(notebooks/**)` covers NotebookEd
 
 ### PowerShell
 
-Native PowerShell. Availability by platform:
+A native PowerShell shell tool, auto-enabled on Windows and opt-in elsewhere via `CLAUDE_CODE_USE_POWERSHELL_TOOL=1` plus `pwsh` 7+ on `PATH`. When enabled it becomes the primary shell. PowerShell can also be selected per command hook (`"shell": "powershell"`) and in skill frontmatter.
 
-| Platform | Default state |
-| --- | --- |
-| Windows without Git Bash | Auto-enabled |
-| Windows with Git Bash | Rolling out progressively |
-| Linux / macOS / WSL | Opt-in (requires PowerShell 7+) |
-
-**Enable**:
-```json
-{ "env": { "CLAUDE_CODE_USE_POWERSHELL_TOOL": "1" } }
-```
-
-On Windows, set `=0` to opt out of the rollout. On Linux/macOS/WSL, install `pwsh` and ensure it's on `PATH`.
-
-**Detection**: pwsh.exe (7+) → powershell.exe (5.1) fallback. When enabled, Claude treats PowerShell as the primary shell. Bash tool stays available for POSIX scripts if Git Bash is installed.
-
-**Execution policy**: spawns with `-ExecutionPolicy Bypass` at process scope only — works on default Windows installs without changing machine policy. Does NOT override Group Policy `MachinePolicy` / `UserPolicy` — enterprise lockdowns still apply. To respect the machine's effective policy: `CLAUDE_CODE_POWERSHELL_RESPECT_EXECUTION_POLICY=1`.
-
-**Three places to select PowerShell** (covered fully in `../config/settings.md` and `hooks.md`):
-
-| Where | Setting | Requires tool enabled? |
-| --- | --- | --- |
-| `settings.json` for interactive `!` commands | `defaultShell: "powershell"` | Yes |
-| Individual command hooks | `"shell": "powershell"` | **No** (hooks spawn PS directly) |
-| Skill frontmatter for `!` injection | `shell: powershell` | Yes |
-
-Same Bash-style cwd reset behavior applies, including `CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR`.
-
-**Preview limitations**: PowerShell profiles not loaded; no sandboxing on Windows.
+Details, including execution-policy handling: [tools reference](https://code.claude.com/docs/en/tools-reference).
 
 ### WebFetch
 
@@ -391,13 +364,6 @@ WebSearch availability: Claude API + Foundry yes, Google Cloud's Agent Platform 
 | `DISABLE_TELEMETRY`, `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | Monitor | Disables the Monitor tool. |
 | `CLAUDE_CODE_ENABLE_TASKS` | TodoWrite / Task* | `=0` re-enables legacy `TodoWrite` (off by default). |
 
-## Cross-OS notes
-
-- **Bash on Windows** — works via Git Bash. Without Git Bash, PowerShell tool auto-enables and Claude treats PowerShell as the shell.
-- **PowerShell on macOS/Linux/WSL** — opt-in via `CLAUDE_CODE_USE_POWERSHELL_TOOL=1` + `pwsh` 7+ on `PATH`.
-- **PowerShell preview** — no Windows sandboxing, profiles not loaded.
-- **Path rules** — `Read`/`Edit` rules use POSIX-normalized paths even on Windows (`C:\...` → `/c/...`). Covered in `../config/permissions.md`.
-
 ## Checking what's loaded
 
 Two ways:
@@ -420,5 +386,4 @@ Two ways:
 - **`/permissions` denies that matter for any project**: `WebFetch(domain:*)` for high-risk domains; `Bash(curl http*)` and `Bash(wget *)` (since WebFetch alone doesn't stop Bash from hitting URLs); `Read(./.env)` family (covered in `../config/permissions.md`).
 - **Watch for `BASH_MAX_OUTPUT_LENGTH` in client projects** with very large logs / generators. Default 30K can truncate and force a file roundtrip; bump to ~80K for log-heavy work, leave default otherwise.
 - **`CLAUDE_CODE_GLOB_NO_IGNORE=false`** is worth setting in user-scope env for any monorepo where you genuinely don't want Claude finding gitignored generated files — saves context vs. relying on permissions.
-- **For the Windows VM**: PowerShell tool auto-enables without Git Bash. If you install Git Bash later, the tool's rolling out progressively so you may or may not see PowerShell as primary — set `CLAUDE_CODE_USE_POWERSHELL_TOOL=0` to opt out, `=1` to opt in.
 - **Cross-platform skill recipes**: prefer `Read` / `Edit` / `Grep` / `Glob` over Bash where possible — those work identically. Bash and PowerShell are the OS-divergent surface.

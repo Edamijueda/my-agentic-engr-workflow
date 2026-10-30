@@ -134,7 +134,7 @@ Same shape as Bash. Differences:
 - AST is parsed; pipeline `|`, statement `;`, and (PS7+) `&&` / `||` split into subcommands evaluated independently.
 - **Common aliases canonicalized** — `PowerShell(Get-ChildItem *)` matches `gci`, `ls`, `dir`. Case-insensitive.
 
-To use PowerShell as the shell on Windows: set `defaultShell: "powershell"` and `CLAUDE_CODE_USE_POWERSHELL_TOOL=1` (see `settings.md`).
+Only relevant if you've enabled the PowerShell tool — see [`../tools/tools-reference.md`](../tools/tools-reference.md).
 
 ## Read and Edit rules — the anchor traps
 
@@ -150,12 +150,6 @@ To use PowerShell as the shell on Windows: set `defaultShell: "powershell"` and 
 | `path` or `./path` | CWD-relative | `Read(*.env)` | `<cwd>/*.env` |
 
 > **Gotcha:** `/Users/alice/file` is **not** an absolute path — it's project-relative. Use `//Users/alice/file` for absolute. Sandbox filesystem paths use the opposite convention (`/` is absolute). Easy place to make a mistake.
-
-### Windows path normalization
-
-POSIX form before matching. `C:\Users\alice` → `/c/Users/alice`. So:
-- `//c/**/.env` matches `.env` anywhere on C: drive.
-- `//**/.env` matches across all drives.
 
 ### Bare filenames behave like gitignore
 
@@ -440,7 +434,6 @@ Combined behaviors:
 | `sandbox.network.allowManagedDomainsOnly` | Only managed `allowedDomains` honored; others auto-blocked. |
 | `disableBypassPermissionsMode` / `disableAutoMode` | Lock off `bypassPermissions` / `auto`. |
 | `strictPluginOnlyCustomization` | Lock skills/agents/hooks/mcp to plugins + managed. |
-| `wslInheritsWindowsSettings` | WSL reads Windows policy chain too. |
 
 ## Precedence (recap)
 
@@ -454,13 +447,11 @@ Same as global settings:
 
 **Array merging**: `permissions.allow / ask / deny` and `additionalDirectories` merge + dedupe across scopes. If a tool is denied at any level, no other level can allow it.
 
-## Cross-OS notes
+## Path form in rules
 
-- **Read/Edit anchors**: `//path` absolute, `/path` project-relative — same on macOS and Windows.
-- **Windows paths normalize to POSIX**: `C:\Users\alice\.env` → `/c/Users/alice/.env`. Use `//c/**/.env` to match `.env` anywhere on C:.
-- **PowerShell rules**: aliases canonicalized — `PowerShell(Get-ChildItem *)` matches `gci`, `ls`, `dir`. Only relevant when `defaultShell: "powershell"`.
-- **Sandbox**: macOS Seatbelt, Linux/WSL2 bubblewrap; **no native Windows sandbox**, so permissions are the only Bash gate on native Windows. Compensate with stricter `permissions.deny` there.
-- **`bypassPermissions` refuses root/sudo on Linux/macOS** unless inside a recognized sandbox. On the Windows VM there's no equivalent root check — be more careful.
+`Read`/`Edit` rules use POSIX-normalized paths: `//path` is absolute, `/path` is project-relative.
+
+`bypassPermissions` refuses to run as root/sudo unless it detects a recognized sandbox.
 
 ## Practical recipes
 
@@ -540,5 +531,4 @@ Same as global settings:
 ## Practical applications for this repo
 
 - The current state of `permissions` is empty everywhere — fine for a docs repo. Once we start drafting hooks/scripts in `claude/config/` we'll want at least the `deny` block above checked in.
-- The Windows VM will lack sandbox protection — when we add Windows-specific examples to the playbook, suggest stricter `permissions.deny` rules there to compensate.
 - Auto mode is worth trying eventually — but the repo-spoof rule means we cannot make this repo auto-mode-default by checking it into `.claude/settings.json`. Personal default → `~/.claude/settings.json`.

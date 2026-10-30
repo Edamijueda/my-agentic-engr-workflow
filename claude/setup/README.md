@@ -1,12 +1,12 @@
 # setup/
 
-How to prepare a fresh machine to run Claude Code — install, authenticate, and (optionally) wire it into VS Code.
+How to prepare a fresh machine to run Claude Code — install, authenticate, and (optionally) wire it into VS Code. Written for macOS; other platforms link out to the official docs.
 
 ## Current docs
 
-- **[`install.md`](install.md)** — install methods per OS (native installer, Homebrew, WinGet, apt/dnf/apk, npm), update channels + auto-update behavior, version pinning, binary integrity verification, uninstall. **Most directly serves the "prepare a new machine" goal.**
-- **[`authentication.md`](authentication.md)** — login flow + 4 account types (Pro/Max, Teams/Enterprise, Console, Bedrock/Vertex/Foundry), credential storage per OS, the 6-tier authentication precedence, `apiKeyHelper`, long-lived OAuth token for CI (`claude setup-token`).
-- **[`vs-code.md`](vs-code.md)** — VS Code extension (also works in Cursor + VS Code forks): install, sign-in, prompt-box features, the built-in `ide` MCP server (selection injection — security-relevant), extension settings, shortcuts, URI handler for deep linking, cross-OS notes.
+- **[`install.md`](install.md)** — install, update channels and auto-update behaviour, version pinning. **Most directly serves the "prepare a new machine" goal.**
+- **[`authentication.md`](authentication.md)** — login flow + account types, credential storage, the 6-tier authentication precedence, `apiKeyHelper`, long-lived OAuth token for CI (`claude setup-token`).
+- **[`vs-code.md`](vs-code.md)** — VS Code extension (also works in Cursor + VS Code forks): install, sign-in, prompt-box features, the built-in `ide` MCP server (selection injection — security-relevant), extension settings, shortcuts, URI handler for deep linking.
 
 ## Suggested first-run order
 
@@ -16,18 +16,9 @@ How to prepare a fresh machine to run Claude Code — install, authenticate, and
 
 ## What's NOT here
 
-- **JetBrains plugin** — intentionally skipped. This user uses VS Code only.
+- **JetBrains plugin** — intentionally skipped. VS Code only.
 - **Cloud provider deep dives** (Bedrock / Vertex / Foundry setup steps) — covered in their respective Anthropic docs; `authentication.md` documents the precedence and env vars, not the cloud-side setup.
 - **MCP server install** — touched on in `vs-code.md`; full MCP doc deferred to its own issue.
-
-## Cross-OS install matrix (quick reference)
-
-| OS | Recommended | Auto-updates? | Cross-OS quirk |
-| --- | --- | --- | --- |
-| **macOS** | Native installer (`curl ... install.sh \| bash`) | Yes | Credentials in encrypted Keychain. Easiest setup. |
-| **Windows native** | Native installer (PowerShell: `irm ... \| iex`) | Yes | **No sandboxing.** Git for Windows optional (enables Bash tool). Without it, PowerShell tool is used. |
-| **WSL 2** | Native installer inside the WSL terminal | Yes | **Sandboxing supported.** Use this if you need sandboxed Bash on Windows. |
-| **Linux** | Native installer or apt/dnf/apk repos (signed) | Native yes; package mgrs no | Package mgrs use system upgrade workflow. |
 
 ## Day-1 settings worth adopting
 

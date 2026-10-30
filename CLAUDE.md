@@ -4,7 +4,9 @@ Project context for Claude Code (and any other agent that reads this file). Load
 
 ## What this repo is
 
-A personal playbook for working efficiently with coding agents. The user comes here when starting a new project, to prepare both the machine and the project for agent-friendly work — install steps, configs, principles, reusable workflows.
+One current source of agentic coding practice, so the same guidance isn't retyped in every project. Other projects learn from it; when a project discovers something that works, it gets written back here.
+
+Agent-agnostic on purpose. Claude Code is the agent in use today, but the practice in `shared/` should survive a switch to whatever beats it later — so anything not genuinely Claude-specific belongs there.
 
 ## Layout
 
@@ -22,15 +24,6 @@ A personal playbook for working efficiently with coding agents. The user comes h
 
 Add a new top-level dir per coding agent as needed (e.g. `cursor/`, `aider/`). Promote cross-cutting findings into `shared/`.
 
-## Cross-OS scope
-
-The playbook must work on both **macOS** and **Windows**. User is on macOS most of the time but switches to Windows (running in VMware Fusion) for some client projects.
-
-When writing setup steps, install instructions, paths, or shell snippets:
-- Cover both OSes — either side-by-side or under clear OS headings.
-- Prefer OS-neutral phrasing where it doesn't cost clarity.
-- If a feature genuinely only works on one OS, flag it.
-
 ## Conventions
 
 - Drafts and exploration go into `research/`. Once stable, promote into `shared/` or `claude/`.
@@ -38,4 +31,6 @@ When writing setup steps, install instructions, paths, or shell snippets:
 - **Keep volatile facts out of `shared/principles/`.** Version numbers, model names and provider names belong in stamped docs; principles should link to them rather than quote them.
 - Decide first whether new content is agent-specific or cross-cutting before placing it. If unsure, draft in `research/` and promote later.
 - Keep the top-level surface area small — don't add new top-level dirs without checking.
+- **Write for macOS**, the platform in use. State an OS-specific fact only where it changes a decision, once, in one line — don't mirror every path and shell snippet across platforms. Link to the official docs for other platforms instead.
+- **Scope to the core purpose.** Reference material that duplicates vendor docs doesn't belong here; a few lines plus a link does. Prefer cutting over keeping.
 - This repo is **public**. Don't write anything personal or sensitive here; that lives in `~/.claude/` memory on the user's machine.

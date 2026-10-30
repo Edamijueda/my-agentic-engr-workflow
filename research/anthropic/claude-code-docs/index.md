@@ -26,16 +26,7 @@ Source: `https://code.claude.com/docs/en/`. Top-level structure mirrors the offi
 - [Glossary](https://code.claude.com/docs/en/glossary) — terminology reference.
 - [Docs map](https://code.claude.com/docs/en/claude_code_docs_map) — official site map.
 
-**Install methods (cross-OS):**
-- **Native installer (recommended; auto-updates in background):**
-  - macOS / Linux / WSL: `curl -fsSL https://claude.ai/install.sh | bash`
-  - Windows PowerShell: `irm https://claude.ai/install.ps1 | iex`
-  - Windows CMD: `curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd`
-- **Homebrew (macOS; manual updates):** `brew install --cask claude-code` (stable, ~1 week behind) or `claude-code@latest` (latest channel).
-- **WinGet (Windows; manual updates):** `winget install Anthropic.ClaudeCode`.
-- **Linux package managers:** apt / dnf / apk (Debian, Fedora, RHEL, Alpine).
-
-**Windows shell note:** Git for Windows is recommended so the Bash tool works natively. Without it, Claude Code uses PowerShell as the shell tool instead. WSL setups don't need Git for Windows.
+**Install methods:** native installer (auto-updates), Homebrew, npm, and the platform package managers. Distilled for macOS in [`../../../claude/setup/install.md`](../../../claude/setup/install.md); other platforms are left to the official page.
 
 ## Core concepts
 
