@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-30
 sources:
   - https://code.claude.com/docs/en/tools-reference
 ---
@@ -107,7 +107,7 @@ Grouped by purpose. **P** = permission required.
 | Tool | P | Notes |
 | --- | --- | --- |
 | `Workflow` | Yes | Run a dynamic workflow (orchestrates many subagents). |
-| `Artifact` | Yes | Publish HTML/Markdown as a private claude.ai page. Team/Enterprise. |
+| `Artifact` | Yes | Publish HTML/Markdown as a private claude.ai page. Pro/Max/Team/Enterprise. See [`artifacts.md`](artifacts.md). |
 | `ShareOnboardingGuide` | Yes | Upload `ONBOARDING.md` and return a share link. Pro/Max/Team/Enterprise. |
 
 ## Rule formats (per tool)
@@ -325,7 +325,7 @@ To limit subagent reach: narrow `tools`, leave Bash off, or set deny rules in se
 - **`ScheduleWakeup`** — Claude calls internally for self-paced `/loop` (pick next iteration time, 1 min to 1 hour). Pending wakeup appears in `session_crons` in `Stop` hook input. Anthropic-only.
 - **`RemoteTrigger`** — backs `/schedule`. Routines on claude.ai. Pro/Max/Team/Enterprise. Anthropic-only.
 - **`Workflow`** — dynamic workflow (many subagents, consolidated result).
-- **`Artifact`** — publishes HTML/Markdown as private claude.ai page. Team/Enterprise.
+- **`Artifact`** — publishes HTML/Markdown as a private claude.ai page. Pro/Max/Team/Enterprise. Needs a claude.ai login; API-key and cloud-provider sessions can't publish. See [`artifacts.md`](artifacts.md).
 - **`PushNotification`** — desktop + (when Remote Control connected) phone push. Anthropic-only.
 - **`ShareOnboardingGuide`** — `/team-onboarding` share link. Pro/Max/Team/Enterprise.
 - **`ToolSearch` / `WaitForMcpServers`** — MCP infrastructure tools Claude calls automatically.
@@ -345,7 +345,7 @@ To limit subagent reach: narrow `tools`, leave Bash off, or set deny rules in se
 | `RemoteTrigger` |
 | `ScheduleWakeup` |
 | `ShareOnboardingGuide` |
-| `Artifact` (also requires Team/Enterprise plan) |
+| `Artifact` (also requires Pro/Max/Team/Enterprise and a claude.ai login) |
 
 WebSearch availability: Claude API + Foundry yes, Google Cloud's Agent Platform Claude 4 only, **Bedrock no**.
 

@@ -4,6 +4,7 @@ Cross-agent rules that shape how I work with any coding agent. Each principle ge
 
 - **[`context-is-finite.md`](context-is-finite.md)** — what you load is what you spend.
 - **[`enforcement-vs-influence.md`](enforcement-vs-influence.md)** — memory is influence; permissions and hooks are enforcement. Pick the layer that matches the guarantee.
+- **[`form-follows-use.md`](form-follows-use.md)** — terminal, file, published page or collaborative document: match the form to who touches it next.
 - **[`checks-over-claims.md`](checks-over-claims.md)** — give the agent something that returns pass/fail, and ask for the output rather than the verdict.
 - **[`durability-ladder.md`](durability-ladder.md)** — rules live at different durability layers; pick the right one for time + machine boundaries.
 - **[`defer-until-friction.md`](defer-until-friction.md)** — don't pre-scaffold. Rule of three.

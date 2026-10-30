@@ -24,6 +24,7 @@ The three foundational config layers.
 
 How Claude Code's engine works under the hood.
 
+- **[`artifacts.md`](tools/artifacts.md)** — publishing pages; constraints, cost, availability gotchas.
 - **[`mcp.md`](tools/mcp.md)** — the portable extension surface; scopes, auth, context cost.
 - **[`plugins.md`](tools/plugins.md)** — when a bundle beats standalone components.
 - **[`context-window.md`](tools/context-window.md)** — what fills the 200K budget, what survives `/compact`.
