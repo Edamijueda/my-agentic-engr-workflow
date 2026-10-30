@@ -24,6 +24,8 @@ The three foundational config layers.
 
 How Claude Code's engine works under the hood.
 
+- **[`mcp.md`](tools/mcp.md)** — the portable extension surface; scopes, auth, context cost.
+- **[`plugins.md`](tools/plugins.md)** — when a bundle beats standalone components.
 - **[`context-window.md`](tools/context-window.md)** — what fills the 200K budget, what survives `/compact`.
 - **[`prompt-caching.md`](tools/prompt-caching.md)** — what invalidates the cache vs. what keeps it (incl. the per-machine + per-directory scope rule).
 - **[`hooks.md`](tools/hooks.md)** — 28 lifecycle events, 5 handler types, JSON/exit-code output protocol.

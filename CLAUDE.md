@@ -17,9 +17,10 @@ Agent-agnostic on purpose. Claude Code is the agent in use today, but the practi
 - `claude/` — Claude Code specifics.
   - `setup/` — install, authentication, vs-code.
   - `config/` — memory, settings, permissions.
-  - `tools/` — context-window, prompt-caching, hooks, skills, tools-reference, subagents.
+  - `tools/` — context-window, prompt-caching, hooks, skills, tools-reference, subagents, mcp, plugins.
   - `slash-commands/` — built-in commands + bundled skills.
   - `workflows/` — parallel-with-forks, custom-subagent-creation, scaffolding-decision, memory-curation, verification-ladder.
+  - `surface-map.md` — index of the surface we deliberately don't document in depth; one line plus a link each.
 - `research/anthropic/` — scratchpad for raw doc notes before they get distilled into `shared/` or `claude/`.
 
 Add a new top-level dir per coding agent as needed (e.g. `cursor/`, `aider/`). Promote cross-cutting findings into `shared/`.

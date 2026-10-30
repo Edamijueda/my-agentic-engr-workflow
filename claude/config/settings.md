@@ -173,7 +173,7 @@ The full list is enormous. The keys below are the ones most likely to matter day
 | `minimumVersion` | Soft floor — blocks auto-updates and `claude update` below this. Lets you stay current. |
 | `requiredMinimumVersion` / `requiredMaximumVersion` | **Managed only** — hard floor/ceiling, refuses startup outside the range. Recovery: `claude update`/`claude install`/`claude doctor` always work. |
 
-### Plugins (covered in their own doc later)
+### Plugins (see [`../tools/plugins.md`](../tools/plugins.md))
 
 | Key | What it does |
 | --- | --- |
