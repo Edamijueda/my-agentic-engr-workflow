@@ -32,20 +32,15 @@ Each of these has a distilled doc carrying a freshness stamp. The stamp, not thi
 | MCP, MCP quickstart | [`claude/tools/mcp.md`](../../../claude/tools/mcp.md) |
 | Plugins overview, plugin security | [`claude/tools/plugins.md`](../../../claude/tools/plugins.md) |
 | Goal, Stop hooks, best practices | [`claude/workflows/verification-ladder.md`](../../../claude/workflows/verification-ladder.md) |
+| Artifacts | [`claude/tools/artifacts.md`](../../../claude/tools/artifacts.md) + [`shared/principles/form-follows-use.md`](../../../shared/principles/form-follows-use.md) |
 
 ## Next gaps, in order
 
-### 1. Artifacts
-
-The largest single hole. `Artifact` appears in the tools reference as a tool and nowhere else, but the surface around it is substantial: published pages, Artifact types, design systems, runtime capabilities, the shared artifact database, and comment threads. Nothing in the playbook says when publishing a page beats writing a file, which is the decision that actually comes up.
-
-Needs its own issue, and probably its own doc rather than a section bolted onto the tools reference.
-
-### 2. Agent teams and workflows
+### 1. Agent teams and workflows
 
 [Agent teams](https://code.claude.com/docs/en/agent-teams) and [workflows](https://code.claude.com/docs/en/workflows) didn't exist when the original sweep ran. Both bear on parallel work, which [`claude/workflows/parallel-with-forks.md`](../../../claude/workflows/parallel-with-forks.md) covers only via forks and subagents. Workflow fan-out has its own prompt-cache behaviour, already noted in the caching doc.
 
-### 3. Best practices
+### 2. Best practices
 
 [Best practices](https://code.claude.com/docs/en/best-practices) is Anthropic's own framing. Worth a read specifically to check it against [`shared/principles/`](../../../shared/principles/) — the value is in the disagreements, not the overlaps.
 

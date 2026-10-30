@@ -11,7 +11,7 @@ Claude Code is much larger than what this playbook documents in depth. That's de
 
 This is the index. One line each, with a link. Reach for one when you actually need it.
 
-**Documented in depth here instead:** [memory](config/memory.md) · [settings](config/settings.md) · [permissions](config/permissions.md) · [context window](tools/context-window.md) · [prompt caching](tools/prompt-caching.md) · [hooks](tools/hooks.md) · [skills](tools/skills.md) · [subagents](tools/subagents.md) · [tools reference](tools/tools-reference.md) · [MCP](tools/mcp.md) · [plugins](tools/plugins.md) · [slash commands](slash-commands/built-in.md) · [install](setup/install.md) · [auth](setup/authentication.md) · [VS Code](setup/vs-code.md)
+**Documented in depth here instead:** [artifacts](tools/artifacts.md) · [memory](config/memory.md) · [settings](config/settings.md) · [permissions](config/permissions.md) · [context window](tools/context-window.md) · [prompt caching](tools/prompt-caching.md) · [hooks](tools/hooks.md) · [skills](tools/skills.md) · [subagents](tools/subagents.md) · [tools reference](tools/tools-reference.md) · [MCP](tools/mcp.md) · [plugins](tools/plugins.md) · [slash commands](slash-commands/built-in.md) · [install](setup/install.md) · [auth](setup/authentication.md) · [VS Code](setup/vs-code.md)
 
 ## Running work you aren't watching
 
@@ -43,10 +43,6 @@ This is the index. One line each, with a link. Reach for one when you actually n
 - [Code Review](https://code.claude.com/docs/en/code-review) — the hosted product, beyond the `/code-review` skill. [Local review](https://code.claude.com/docs/en/code-review-local) and [ultrareview](https://code.claude.com/docs/en/ultrareview) cover the in-session paths; see [`../shared/workflows/diff-review-cycle.md`](../shared/workflows/diff-review-cycle.md).
 - [Security guidance](https://code.claude.com/docs/en/security-guidance) — catching issues as code is written. [Scan a codebase](https://code.claude.com/docs/en/claude-security).
 - [Sandboxing](https://code.claude.com/docs/en/sandboxing) — sandboxed Bash (Seatbelt on macOS). Summarised in [`config/settings.md`](config/settings.md).
-
-## Artifacts
-
-- [Share session output as artifacts](https://code.claude.com/docs/en/artifacts) — publishing a page from a session. Reach for it when output is meant for someone else to look at or use rather than read as text. **Not yet distilled here** — see the next-gaps list in [`../research/anthropic/claude-code-docs/priorities.md`](../research/anthropic/claude-code-docs/priorities.md).
 
 ## Scaling up and debugging
 

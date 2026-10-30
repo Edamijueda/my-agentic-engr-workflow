@@ -9,7 +9,7 @@ An agent stops when the work *looks* done. Give it something that comes back pas
 1. **Mistakes survive until you happen to notice.** Every error sits there, in code you didn't write, until you read it.
 2. **The agent can't iterate.** Given a check, it makes the change, runs it, reads the failure, and fixes it — a loop that needs no input from you. Without one, it hands you work of unknown quality and waits.
 
-The check doesn't have to be a test suite. Anything the agent can run and read the result of will do: a build's exit code, a linter, a typecheck, a script that diffs output against a fixture, a screenshot next to the mockup. If your project already has one, the single most useful line in your instruction file is the command that runs it.
+The check doesn't have to be a test suite. Anything the agent can run and read the result of will do: a build's exit code, a linter, a typecheck, a script that diffs output against a fixture, a rendered page or screenshot next to the mockup (see [`form-follows-use.md`](form-follows-use.md)). If your project already has one, the single most useful line in your instruction file is the command that runs it.
 
 ## Ask for evidence, not a verdict
 

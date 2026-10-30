@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-30
 sources:
   - https://code.claude.com/docs/en/memory
   - https://code.claude.com/docs/en/settings
@@ -153,8 +153,25 @@ Don't add these on day one. Add them when the friction shows up:
 | You need a procedure to fire automatically at a specific moment | Hook ([`claude/tools/hooks.md`](../../claude/tools/hooks.md)). `PreToolUse` for guards, `PostToolUse` for auto-format, `SessionStart` for context injection. |
 | A side task floods your conversation with logs / search output | Delegate to a subagent ([`claude/tools/subagents.md`](../../claude/tools/subagents.md)). Built-in `Explore` is read-only and fast — good default for research. |
 | You're starting a long task that needs sustained focus | `/plan` for the plan, then accept into `acceptEdits`. Use a subagent for any verbose sub-step. |
-| The project uses an external system (Jira, Drive, Slack) | MCP server (deferred doc; see [Anthropic's MCP docs](https://code.claude.com/docs/en/mcp)). |
+| The project uses an external system (Jira, Drive, Slack) | MCP server ([`claude/tools/mcp.md`](../../claude/tools/mcp.md)). The signal is catching yourself copying data into the chat. |
+| The project has a visual surface and you'll ask for mockups, dashboards or layout comparisons | Record the design system in `CLAUDE.md` — see below. |
 | Personal preferences across all projects | `~/.claude/CLAUDE.md` (not the project file). |
+
+### Design tokens, if the project has a visual surface
+
+When Claude builds a page for you — a mockup, a dashboard, a set of layout options — it reaches for a design system in the project before falling back to its own taste. Recording yours once means every page it produces looks like your product instead of generic:
+
+```markdown
+## Design system
+
+- Colors: primary #1a4d8f, accent #f59e0b, surface #f8fafc
+- Typography: Inter for body, JetBrains Mono for code
+- Spacing: 8px scale, 6px border radius
+```
+
+Precedence is your prompt, then this, then the defaults. Any clear list of colours, fonts and spacing works — the heading above is just an example.
+
+Skip it for a project with no visual output. See [`claude/tools/artifacts.md`](../../claude/tools/artifacts.md).
 
 > **The defer-until-friction rule matters.** Premature scaffolding is wasted context and wasted setup time. Most projects need exactly: `CLAUDE.md`, `.claude/settings.json` with denies, and personal plan-mode default. That's it for day one.
 

@@ -11,6 +11,7 @@ Cross-cutting rules that shape every choice in the playbook.
 - **[`context-is-finite.md`](principles/context-is-finite.md)** — what you load is what you spend.
 - **[`enforcement-vs-influence.md`](principles/enforcement-vs-influence.md)** — memory is influence; permissions and hooks are enforcement. Pick the lightest layer that gives the guarantee.
 - **[`durability-ladder.md`](principles/durability-ladder.md)** — rules live at different durability layers; pick the right one for time + machine boundaries.
+- **[`form-follows-use.md`](principles/form-follows-use.md)** — match the output's form to how it will be used.
 - **[`checks-over-claims.md`](principles/checks-over-claims.md)** — give the agent a pass/fail check; demand evidence, not a verdict.
 - **[`defer-until-friction.md`](principles/defer-until-friction.md)** — don't pre-scaffold. Rule of three.
 
