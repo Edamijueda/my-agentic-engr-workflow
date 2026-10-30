@@ -19,6 +19,44 @@ None of that announced itself. Finding it took a full manual sweep of every file
 
 A stamp converts that sweep into a comparison. You stop asking "is this still true?" of 44 files and start asking "which files were verified before version X?" — a question a single command answers.
 
+## What a stamp doesn't tell you
+
+A stamp records **when a doc was last checked, not whether the check was right.** It catches staleness. It does nothing about a claim that was wrong the day it was written.
+
+The worked example: `claude/tools/tools-reference.md` said the `Artifact` tool required a Team or Enterprise plan. Artifacts are available on Pro and Max too. That was wrong from the day it was written, and it survived for months because:
+
+- It was never *drift*. No version gap, dead URL or renamed page ever pointed at it, so none of the signals in the refresh pass below could have found it.
+- Step 1 narrows to docs whose stamp is behind the installed version. That doc's stamp was current, so it was never a candidate.
+- It picked up a fresh stamp on **two** separate passes, because a stamp bump doesn't require re-reading every claim in the file.
+
+It surfaced only because someone fetched the artifacts page for an unrelated reason and happened to notice.
+
+Two consequences worth keeping in mind:
+
+- **A stamp is per-doc, not per-claim.** One verified claim says nothing about the other forty in the same file.
+- **Drift signals are necessary but not sufficient.** The pass below finds what *changed*. Nothing in it finds what was wrong to begin with.
+
+Two cheap habits that would have caught this one:
+
+- **Spot-check while you're there.** Any time you fetch a page for any reason, glance at the claims the repo already makes from it. Free verification, and it is how this error was actually found.
+- **Suspect claims that gate access.** Plan requirements, availability matrices, permission and auth prerequisites. A wrong one fails *silently* — it removes an option instead of producing an error. A wrong command breaks loudly the first time you run it; a wrong "requires Enterprise" just quietly stops you trying.
+
+### The 2026-10-27 cohort
+
+`verified_on: 2026-10-27` is not a normal stamp. It came from the bulk pass that introduced this convention, which checked specific drift patterns — model names, provider renames, dead URLs, version gates — rather than reading each doc end to end against its sources.
+
+Treat that date as **weaker evidence** than one set by a genuine re-read, and clear the cohort first when you next do a full pass. The `Artifact` error lived in one of them. To list what's left:
+
+```bash
+git ls-files '*.md' | while read -r f; do
+  awk -v F="$f" 'NR==1 && $0 != "---" { exit }
+                 NR>1  && $0 == "---" { exit }
+                 /^verified_on: 2026-10-27$/ { print F }' "$f"
+done
+```
+
+As that list shrinks, so does the repo's exposure to the kind of error a stamp can't catch.
+
 ## The stamp
 
 Every doc that asserts externally verifiable product facts carries YAML frontmatter:
@@ -120,9 +158,21 @@ Drop gates more than a few minor versions behind what you run. Keep them where t
 
 ### 5. Re-stamp
 
-Update `verified_against` and `verified_on` on every doc you checked — including the ones you confirmed were already correct. An unchanged doc with a current stamp is the whole point: it's how the next pass knows to skip it.
+**A stamp means the doc was read against its sources on that date.** Bump `verified_against` and `verified_on` when that's what you did — including for docs you confirmed were already correct. An unchanged doc with a current stamp is the whole point: it's how the next pass knows to skip it.
 
-A doc you looked at but couldn't verify gets no new stamp. Leaving the old one is honest; it stays on the candidate list.
+Three cases where you should **not** bump:
+
+- You verified one claim and changed it, but didn't re-read the rest. That's the mistake that let the `Artifact` error survive — the bump asserted a whole file had been checked when three lines had.
+- You looked at the doc but couldn't reach its sources.
+- You edited it without touching a factual claim: removing a section, fixing a link, rewording. Nothing about the doc's accuracy changed, so the date shouldn't move.
+
+Leaving an old stamp is honest. It keeps the doc on the candidate list, which is where an unverified doc belongs.
+
+### 6. Sample what nothing flagged
+
+Steps 1 and 2 only surface drift. Before you call the pass done, verify a handful of claims that nothing pointed at — drawn from the access-gating kind above, since those are the ones that fail silently.
+
+Sampling is a poor substitute for reading 7,000 lines, and a good substitute for reading none of them.
 
 ## Running it with an agent
 

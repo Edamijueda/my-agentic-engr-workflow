@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-30
+verified_on: 2026-10-27
 sources:
   - https://code.claude.com/docs/en/tools-reference
 ---
