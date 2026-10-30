@@ -1,18 +1,21 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-30
 sources:
   - https://code.claude.com/docs/en/context-window
+  - https://code.claude.com/docs/en/best-practices
   - https://code.claude.com/docs/en/prompt-caching
 ---
 
 # Long task with `/compact`
 
-Token-budget management for sessions that run an hour or more. The four levers: `/context`, `/compact`, `/clear`, `/rewind`.
+Keeping a long session focused. The four levers: `/context`, `/compact`, `/clear`, `/rewind`.
+
+This is not about avoiding a full context window — compaction handles that on its own. It's about the fact that a session carrying three abandoned approaches answers worse, and costs more per turn, than one carrying the current task.
 
 ## When this matters
 
-- You've been working in the same session long enough to feel latency growing.
+- You've been working in the same session long enough that answers are drifting or latency is growing.
 - You're switching to an unrelated task in the same session.
 - You went down a wrong path and want to back out.
 - The status bar shows the context window approaching full.

@@ -17,5 +17,5 @@ All `claude/tools/` deep-dives are complete.
 
 ## Why these live together
 
-Tools, hooks, skills, and subagents all consume or protect context. Reading [`context-window.md`](context-window.md) makes choices in the other docs easier — e.g. why `disable-model-invocation: true` matters for skills with side effects, why a subagent is a context-saver, why a `PreToolUse` hook is the right enforcement layer instead of a `CLAUDE.md` rule.
+Tools, hooks, skills, and subagents all consume context. Reading [`context-window.md`](context-window.md) makes choices in the other docs easier — e.g. why `disable-model-invocation: true` matters for skills with side effects, and why a `PreToolUse` hook is the right enforcement layer instead of a `CLAUDE.md` rule.
 

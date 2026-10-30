@@ -2,6 +2,23 @@
 
 Instructions in memory files and prompts are **influence** the model may follow. Permissions and hooks are **enforcement** the model cannot bypass. Pick the layer that matches the guarantee you need.
 
+Anthropic frames the same split as **non-deterministic** (you write it, the model reads it, the model decides) versus **deterministic** (you configure it, the harness executes it every time). Most capabilities exist in both forms:
+
+| | Non-deterministic — the model decides | Deterministic — the harness enforces |
+| --- | --- | --- |
+| What to do | Your prompt, memory files, skills the model picks up itself | Hooks; skills only you can start |
+| What it can touch | The permission classifier | Deny rules, the sandbox, managed settings |
+| When it's done | A request for evidence, a goal condition, a review | Tests, typecheck, a `Stop` hook, CI |
+| How much it spends | Effort level, the model's own pace | Turn and budget caps, a spend limit |
+| Who has the last word | The model's summary of what it did | Branch protection, the person who approves the merge |
+
+**Default to the non-deterministic side.** Almost every guideline has exceptions, and a model with the actual code in front of it judges whether a guideline fits better than a rule you wrote in advance. Reach for enforcement when something must *always* or *never* happen regardless of that judgement.
+
+Two signals you've picked the wrong side:
+
+- You keep adding emphasis to an instruction and it still gets missed → it belongs in a hook.
+- You have hooks enforcing things that are only preferences → delete them and let the model decide.
+
 ## Why it's true
 
 Memory files (`CLAUDE.md`, `.claude/rules/`, custom system prompts) are sent to the model as context. The model reads them and tries to follow them, but there's no code-level check that the model actually does. If the model decides a rule doesn't apply or just forgets, the work proceeds.
@@ -59,3 +76,4 @@ Don't reach for hooks when permissions would do. Don't reach for permissions whe
 - [`claude/tools/hooks.md`](../../claude/tools/hooks.md) — the full hooks reference.
 - [`claude/config/memory.md`](../../claude/config/memory.md) — what memory is and isn't.
 - [`durability-ladder.md`](durability-ladder.md) — the related axis of "how long does this rule need to last."
+- [Deterministic and non-deterministic instructions](https://code.claude.com/docs/en/best-practices) — the source for the framing above.

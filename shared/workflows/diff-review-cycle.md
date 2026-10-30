@@ -1,8 +1,9 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-30
 sources:
   - https://code.claude.com/docs/en/code-review
+  - https://code.claude.com/docs/en/best-practices
 ---
 
 # Diff-review cycle
@@ -17,6 +18,14 @@ The before-you-ship loop. Use `/diff` / `/code-review` / `/simplify` / `/rewind`
 - **When something feels off** but you can't articulate what.
 
 If the change is two lines of obvious cleanup, skip it. The cycle is for changes you wouldn't bet money on.
+
+## Why a review agent beats re-reading it yourself
+
+`/code-review` runs in a fresh subagent that never saw your conversation. That's the point. By the time you finish a change you're anchored on the reasoning that produced it, and so is the session that wrote it — both of you will read the diff and find it convincing. A reviewer without that history isn't persuaded by an explanation it never heard.
+
+This is the one case where delegating genuinely improves the answer rather than just moving work around. Handing the same task to a subagent doesn't make it smarter; handing it to a reviewer that lacks your assumptions does.
+
+One caveat: a reviewer asked to find problems will always find *something*. If you fix every finding you end up with abstraction layers and tests for cases that can't occur. Tell it what to skip, and treat findings as candidates rather than a to-do list.
 
 ## The tools
 
