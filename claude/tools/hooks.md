@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-30
 sources:
   - https://code.claude.com/docs/en/hooks
   - https://code.claude.com/docs/en/hooks-guide
@@ -53,17 +53,17 @@ Managed admins can use `allowManagedHooksOnly` to block user/project/plugin hook
 
 ## Lifecycle events at a glance
 
-28 events. Grouped here by cadence — the key axis when deciding where a hook belongs.
+33 events. Grouped here by cadence — the key axis when deciding where a hook belongs.
 
 ### Per-session
 
 | Event | Fires when | Notable |
 | --- | --- | --- |
-| `SessionStart` | New session, resume, after `/clear`, after `/compact`. Matcher: `startup` / `resume` / `clear` / `compact`. | Has `CLAUDE_ENV_FILE`; stdout is added as context; can return `additionalContext`, `sessionTitle`, `initialUserMessage`, `watchPaths`, `reloadSkills`. |
+| `SessionStart` | New session, resume, after `/clear`, after `/compact`. Matcher: `startup` / `resume` / `clear` / `compact` / `fork`. | Has `CLAUDE_ENV_FILE`; stdout is added as context; can return `additionalContext`, `sessionTitle`, `initialUserMessage`, `watchPaths`, `reloadSkills`. |
 | `Setup` | **Only** with `--init-only`, or `--init` / `--maintenance` in `-p` mode. Matcher: `init` / `maintenance`. | For CI prep. Has `CLAUDE_ENV_FILE`. Does **not** fire on normal startup. |
 | `InstructionsLoaded` | A CLAUDE.md or `.claude/rules/*.md` loads — at session start and lazily. Matcher: `session_start` / `nested_traversal` / `path_glob_match` / `include` / `compact`. | Observation only — no decision control. Best tool for debugging "why didn't my rule load?" |
 | `ConfigChange` | A settings file changes mid-session. Matcher: `user_settings` / `project_settings` / `local_settings` / `policy_settings` / `skills`. | Can block changes (except `policy_settings`). |
-| `SessionEnd` | Session terminates. Matcher: `clear` / `resume` / `logout` / `prompt_input_exit` / `bypass_permissions_disabled` / `other`. | Default timeout **1.5s** (overall budget). Cannot block. Override with `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=5000`. |
+| `SessionEnd` | Session terminates. Matcher: `clear` / `resume` / `logout` / `prompt_input_exit` / `other`. | Default timeout **1.5s** (overall budget for all SessionEnd hooks). Cannot block. `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` (ms) overrides the budget and becomes the per-hook default; a longer per-hook `timeout` also raises the budget, up to 60s. `bypass_permissions_disabled` was removed in v2.1.234 — drop it from existing matchers. |
 
 ### Per-turn
 
@@ -75,13 +75,14 @@ Managed admins can use `allowManagedHooksOnly` to block user/project/plugin hook
 | `StopFailure` | Turn ends due to API error. Matcher: `rate_limit` / `overloaded` / `authentication_failed` / `billing_error` / etc. | Output ignored. Logging / alerting only. |
 | `TeammateIdle` | Agent-team teammate about to go idle. | Exit 2 = teammate continues with feedback. JSON `{continue: false}` stops it. |
 | `PreCompact` / `PostCompact` | Before/after compaction. Matcher: `manual` / `auto`. | PreCompact can block. Blocking auto-compact that fired to recover from context-limit error surfaces the underlying API error. |
+| `PreModelSwitch` / `PostModelSwitch` | A model switch is requested / completed. Matcher: canonical model name (e.g. `claude-opus-5`, `.*opus.*`). | PreModelSwitch can cancel: exit 2, `decision: "block"`, or `permissionDecision` (`allow`/`deny`/`ask` — no `defer`, no `updatedInput`). Precedence `deny` > `ask` > `allow`. Default timeout 30s, and a timeout **blocks** the switch. Does **not** fire for switches Claude Code makes itself (automatic fallback, resume) — those reach PostModelSwitch only, with `source` `auto` or `resume`. v2.1.251+. |
 
 ### Per tool call (the agentic loop)
 
 | Event | Fires when | Notable |
 | --- | --- | --- |
 | `PreToolUse` | Before each tool call. Matcher: tool name. | Decision via `hookSpecificOutput.permissionDecision`: `allow` / `deny` / `ask` / `defer`. Can rewrite via `updatedInput`. |
-| `PermissionRequest` | A permission dialog is about to show. Matcher: tool name. | Decision = `behavior: "allow" | "deny"`. Can pre-approve and persist via `updatedPermissions`. |
+| `PermissionRequest` | A permission dialog is about to show — or Claude Code would auto-deny a call that can't prompt. Matcher: tool name. | Decision = `behavior: "allow" | "deny"`. Can pre-approve and persist via `updatedPermissions`. Under `-p` these still run outside `dontAsk` mode, and a call no hook decides is denied. |
 | `PermissionDenied` | Auto-mode classifier denied. Matcher: tool name. | Set `hookSpecificOutput.retry: true` to tell the model it may retry. Cannot reverse denial. |
 | `PostToolUse` | Tool succeeded. Matcher: tool name. | `updatedToolOutput` rewrites what Claude sees (tool already ran — files/network already touched). |
 | `PostToolUseFailure` | Tool failed. Matcher: tool name. | `additionalContext` to add diagnostic info for Claude. |
@@ -98,6 +99,7 @@ Managed admins can use `allowManagedHooksOnly` to block user/project/plugin hook
 | `CwdChanged` | Reactive env management (think direnv). Has `CLAUDE_ENV_FILE`. Can set `watchPaths` for FileChanged. |
 | `FileChanged` | Watched file changed on disk. Matcher = literal filenames split on `|` (regex *not* useful here). Has `CLAUDE_ENV_FILE`. |
 | `WorktreeCreate` / `WorktreeRemove` | Replace default git-worktree behavior for non-git VCS (SVN, Perforce, Mercurial). WorktreeCreate **must** print absolute path on stdout. Any non-zero exit aborts creation. |
+| `DirectoryAdded` | A directory is added to the session. Matcher: `slash_command` / `register_repo_root`. | No decision control — the add has already happened and `continue` is discarded. Fires *after* sandbox and permission state refresh, so sandboxed tools already see the new directory. Hook commands themselves run unsandboxed. |
 | `Elicitation` / `ElicitationResult` | MCP server requests user input. Matcher: MCP server name. Can answer programmatically. |
 
 ## Matcher syntax
@@ -107,12 +109,16 @@ The `matcher` field on a group filters when hooks fire. Behavior depends on char
 | Matcher value | Evaluated as | Example |
 | --- | --- | --- |
 | `"*"`, `""`, omitted | Match all | Fires on every occurrence |
-| Letters, digits, `_`, `|` only | Exact string, or `|`-list of exacts | `Bash`, `Edit|Write` |
-| Any other character | JavaScript regex | `^Notebook`, `mcp__memory__.*` |
+| Only letters, digits, `_`, `-`, space, `,`, `|` | Exact string, or a list separated by `|` **or** `,` | `Bash`, `Edit|Write`, `Edit, Write` |
+| Any other character | JavaScript regex, **unanchored** | `^Notebook`, `mcp__memory__.*` |
 
-**Common mistake**: `mcp__memory` (no `.*`) is exact-string and matches no tool. Use `mcp__memory__.*` to match the whole server. (`mcp__github__get_*` matches just the `get_` tools.)
+Regex matchers run through `RegExp.prototype.test`, so they match **anywhere** in the value. `Edit.*` matches `NotebookEdit` as well as `Edit`. Anchor with `^` and `$` when you mean the whole string: `"^Edit$"`.
 
-**Canonical tool names only.** Transcript labels (e.g. "Stop Task") differ from canonical names (`TaskStop`). Permission rules and hook matchers both use the canonical name.
+**Common mistake**: `mcp__memory` (no `.*`) contains only exact-match characters, so it's compared literally and matches no tool. Use `mcp__memory__.*` for the whole server. (`mcp__github__get_*` matches just the `get_` tools.)
+
+**`FileChanged` and `StopFailure` are stricter** — they accept only letters, digits, `_` and `|`. A hyphen, space or comma pushes those two into regex mode, and only `|` separates alternatives there.
+
+**Canonical tool names only, and matchers are case-sensitive.** Transcript labels (e.g. "Stop Task") differ from canonical names (`TaskStop`). Permission rules and hook matchers both use the canonical name.
 
 Events that **don't support matchers** and always fire: `UserPromptSubmit`, `PostToolBatch`, `Stop`, `TeammateIdle`, `TaskCreated`, `TaskCompleted`, `WorktreeCreate`, `WorktreeRemove`, `CwdChanged`, `MessageDisplay`. Adding a `matcher` to these is silently ignored.
 
@@ -121,6 +127,10 @@ Events that **don't support matchers** and always fire: `UserPromptSubmit`, `Pos
 ### `if` field (fine-grained tool/arg filter)
 
 Layered on top of the matcher for tool events (`PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `PermissionDenied`). Uses **permission rule syntax** — same shape as `permissions.allow`. Each `if` holds **exactly one rule** — no `&&` / `||` / list. To combine, write multiple hook handlers.
+
+> **On any other event, a handler with `if` set never runs.** It fails closed, silently. Use `matcher` to pick the tool and `if` to narrow by argument; both must match.
+
+Directory patterns anchor to the working directory: `Edit(src/**)` matches only the top-level `src`. Use `Edit(**/src/**)` to match at any depth.
 
 Bash `if` matching has subtleties worth knowing:
 
@@ -142,7 +152,7 @@ Unparseable Bash also fails open. **The `if` filter is best-effort** — use the
 | --- | --- | --- |
 | `type` | Yes | `"command"`, `"http"`, `"mcp_tool"`, `"prompt"`, or `"agent"` |
 | `if` | No | Permission rule — only on tool events. Without it, every handler in the group runs. |
-| `timeout` | No | Seconds. Defaults: 600 for command/http/mcp_tool, 30 for prompt, 60 for agent. `UserPromptSubmit` lowers command/http/mcp_tool to 30. `MessageDisplay` lowers it to 10. |
+| `timeout` | No | Seconds. Defaults: 600 for command/http/mcp_tool, 30 for prompt, 60 for agent. `UserPromptSubmit`, `PreModelSwitch` and `PostModelSwitch` lower command/http/mcp_tool to 30. `MessageDisplay` lowers it to 10. Not enforced on `async: true` command hooks. |
 | `statusMessage` | No | Custom spinner message while the hook runs. |
 | `once` | No | Run once per session then remove. **Skill frontmatter only** — ignored elsewhere. |
 
@@ -337,7 +347,7 @@ A string from your hook injected into Claude's context window. Wrapped in a syst
 | --- | --- | --- |
 | `UserPromptSubmit`, `UserPromptExpansion`, `PostToolUse`, `PostToolUseFailure`, `PostToolBatch`, `Stop`, `SubagentStop`, `ConfigChange`, `PreCompact` | Top-level `decision` | `decision: "block"`, `reason`. Stop/SubagentStop also accept `hookSpecificOutput.additionalContext` for non-error feedback. |
 | `PreToolUse` | `hookSpecificOutput` | `permissionDecision: "allow"|"deny"|"ask"|"defer"`, `permissionDecisionReason`, optional `updatedInput`. |
-| `PermissionRequest` | `hookSpecificOutput.decision` | `behavior: "allow"|"deny"`, optional `updatedInput`, `updatedPermissions`. |
+| `PermissionRequest` | `hookSpecificOutput.decision` | `behavior: "allow"` takes optional `updatedInput`, `updatedPermissions` (modified input is re-checked against deny/ask). `behavior: "deny"` takes `message` (shown to Claude) and `interrupt: true` to stop Claude. |
 | `PermissionDenied` | `hookSpecificOutput` | `retry: true` to tell model it may retry. |
 | `MessageDisplay` | `hookSpecificOutput` | `displayContent` replaces rendered text (display-only). |
 | `WorktreeCreate` | Path return | Command stdout = path. HTTP = `hookSpecificOutput.worktreePath`. |
@@ -347,24 +357,34 @@ A string from your hook injected into Claude's context window. Wrapped in a syst
 
 ### `PreToolUse` decision control in detail
 
-The most flexible event. Four outcomes:
+The most flexible event, and the strongest enforcement point in Claude Code:
+
+> **`PreToolUse` fires before any permission-mode check**, in every mode including `dontAsk`. A hook returning `permissionDecision: "deny"` blocks the call even under `bypassPermissions` or `--dangerously-skip-permissions`. This is why a hook — not a deny rule — is the layer for policy a user mustn't be able to switch off. See [`../../shared/principles/enforcement-vs-influence.md`](../../shared/principles/enforcement-vs-influence.md).
+>
+> One hole worth knowing: if the machine has no managed settings and the session isn't using `/login` credentials for a Team or Enterprise plan, a **mod** can approve a call your hook denied. In plan mode it can only do so for read-only calls.
+
+Four outcomes:
 
 | `permissionDecision` | Effect |
 | --- | --- |
-| `"allow"` | Skip permission prompt. Deny/ask rules **still apply**. |
+| `"allow"` | Skip permission prompt. Deny/ask rules **still apply** — and so do actions no mode auto-approves, reads of network paths, and `always_ask` tools unless the mode approves them. |
 | `"deny"` | Block the call. |
 | `"ask"` | Show user a permission prompt. Dialog includes `[User]` / `[Project]` / `[Plugin]` / `[Local]` label so user knows where ask came from. |
-| `"defer"` | **For SDK/headless only.** Exits session gracefully with `stop_reason: "tool_deferred"` so the calling process can collect input through its own UI, then resume. Logged-and-ignored in interactive mode. |
+| `"defer"` | **`-p` only, and only when Claude makes a single tool call in that turn.** Ends the turn with `stop_reason: "tool_deferred"` so the calling process can collect input through its own UI, then resume. Logged-and-ignored in interactive mode. `updatedInput` is ignored alongside it. |
 
 Multiple hook precedence: `deny` > `defer` > `ask` > `allow`.
 
+In **plan mode**, an `"allow"` on a file edit gets you the same prompt, block or approval the edit would have had with no hook at all. Approve the plan or leave plan mode to lift that.
+
 **Tool input rewriting**: `updatedInput` replaces the entire input object — include unchanged fields too. Combine with `"allow"` to auto-approve modified input, or `"ask"` to show the user the modified input.
+
+> **Don't have two hooks rewrite the same tool.** When several `PreToolUse` hooks return `updatedInput`, Claude Code neither merges them nor guarantees which one the tool runs with.
 
 **For `AskUserQuestion` and `ExitPlanMode` in headless mode**: returning `"allow"` alone hangs. Use `updatedInput` to supply the answer too (for `AskUserQuestion`, echo back `questions` and add `answers` mapping each question text to chosen label).
 
 ### `PostToolUse` `updatedToolOutput`
 
-Rewrites what Claude sees after a tool runs. Must match the tool's output shape (e.g. `Bash` returns `{stdout, stderr, interrupted, isImage}`). For built-in tools, mismatched shape is silently ignored and original is used. MCP tool output passes through without schema validation.
+Rewrites what Claude sees after a tool runs. Must match the tool's output shape (e.g. `Bash` returns `{stdout, stderr, interrupted, isImage}`). For built-in tools, mismatched shape is silently ignored and original is used. MCP tool output passes through without schema validation. (`updatedMCPToolOutput` exists for MCP tools only — prefer `updatedToolOutput`.)
 
 > **Tool already ran.** Files written, commands executed, network requests sent have already happened. Telemetry (OTel spans, analytics) also captures the original output. To prevent or modify a call before it runs, use `PreToolUse`.
 
@@ -393,7 +413,16 @@ Stdout adds to context directly — no JSON needed. JSON unlocks more:
 | `decision: "block"` + `reason` | Hook error / continuation feedback | Hard "you can't stop yet" — e.g. tests must pass. |
 | `hookSpecificOutput.additionalContext` | Hook feedback (clean) | "Working as designed" guidance — e.g. "run tests before finishing". |
 
-Both honor the `stop_hook_active` input flag and the **8-consecutive-block cap**: after eight blocks in a row with no tool call in between, Claude Code overrides the next block and lets the turn end. Without that, a check that can never pass would trap the session. Raise the cap with `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`.
+**Check `stop_hook_active` and exit early.** It's `true` when your hook already caused a continuation, and ignoring it is how a hook ends up hitting the cap:
+
+```bash
+INPUT=$(cat)
+if [ "$(jq -r '.stop_hook_active' <<<"$INPUT")" = "true" ]; then
+  exit 0   # let Claude stop
+fi
+```
+
+Both approaches honor that flag and the **8-consecutive-block cap**: after eight blocks in a row with no tool call in between, Claude Code overrides the next block and lets the turn end. Without that, a check that can never pass would trap the session. Raise the cap with `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`.
 
 Exit 2 is what blocks; **stderr becomes the reason Claude sees** (stderr from a hook that exits 0 is discarded), so redirect the check's output there — `pnpm tsc --noEmit 1>&2 || exit 2`.
 
@@ -447,11 +476,13 @@ Command hooks only. Hook starts and Claude immediately continues without waiting
 
 **Cannot return decisions** — `decision`, `permissionDecision`, `continue` all ignored since the triggering action already proceeded.
 
-When the background process exits, `additionalContext` is delivered on the **next conversation turn**. If the session is idle, the response waits until the next user interaction — **unless** `asyncRewake: true` and exit code 2, which wakes Claude immediately.
+When the background process exits, `additionalContext` and `systemMessage` are delivered on the **next conversation turn** — neither is shown to you, unlike a synchronous hook's `systemMessage`. If the session is idle, the response waits until the next user interaction — **unless** `asyncRewake: true` and exit code 2, which wakes Claude immediately.
 
-`timeout` (default 600s, max) limits how long the background process runs.
+**`timeout` is not enforced** once the hook is running in the background. The exception is `asyncRewake`, where it still applies.
 
-No deduplication — each firing creates a separate process.
+Under `-p`, any async hook still running at teardown is **killed and finalized as `cancelled`**. If the work must outlive the session, have the hook start a fully detached process.
+
+Each firing creates a separate process — no deduplication. One exception on output: an async `SessionStart` hook runs every time, but Claude Code skips delivering text identical to what Claude last received from that hook, until it changes or a compaction / `/clear` happens.
 
 Notifications suppressed by default. Enable with `Ctrl+O` or `--verbose`.
 
@@ -460,20 +491,35 @@ Notifications suppressed by default. Enable with `Ctrl+O` or `--verbose`.
 LLM evaluates instead of a script. Returns:
 
 ```json
-{ "ok": true | false, "reason": "Explanation" }
+{ "ok": true | false, "reason": "Explanation", "impossible": true | false }
 ```
 
-`continueOnBlock: true` lets `PostToolUse` and `TeammateIdle` feed the reason back instead of stopping.
+`reason` is required when `ok` is `false`. **`impossible`** is how a prompt hook gives up: returned with `ok: false`, it tells Claude Code the condition can never be satisfied, and on `Stop` / `SubagentStop` the turn is allowed to end instead of the reason being fed back. Agent hooks and other events ignore it.
+
+`continueOnBlock: true` changes what `ok: false` does, on the events where it applies:
+
+| Event | Default on `ok: false` | With `continueOnBlock: true` |
+| --- | --- | --- |
+| `Stop` / `SubagentStop` | Reason fed back as the next instruction, turn continues | n/a — already continues |
+| `PreToolUse` | Call denied, turn ends, warning in chat | Reason returned as the tool error so Claude can adjust |
+| `PostToolUse` | Turn ends, warning in chat | Reason fed back, turn continues |
+| `TeammateIdle` | Teammate stops | Reason fed back, teammate keeps working |
+| `PostToolUseFailure`, `TaskCreated` | Returned as a tool error, turn continues | No effect — same either way |
+| `PostToolBatch`, `UserPromptSubmit`, `UserPromptExpansion` | Turn ends | No effect — these end the turn regardless |
 
 **Supported events** (full set with prompt + agent): `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PostToolBatch`, `PermissionRequest`, `PermissionDenied`, `Stop`, `SubagentStop`, `TaskCreated`, `TaskCompleted`, `TeammateIdle`, `UserPromptSubmit`, `UserPromptExpansion`.
 
-**NOT supported**: most observation events (`ConfigChange`, `CwdChanged`, `FileChanged`, `InstructionsLoaded`, `Notification`, etc.), `SessionStart`, `Setup`, `WorktreeCreate`/`Remove`, `Elicitation`/`Result`, `PreCompact`/`PostCompact`, `SessionEnd`, `StopFailure`, `SubagentStart`.
+**NOT supported**: the observation and specialty events — `ConfigChange`, `CwdChanged`, `DirectoryAdded`, `Elicitation`/`Result`, `FileChanged`, `InstructionsLoaded`, `MessageDisplay`, `Notification`, `PreCompact`/`PostCompact`, `PreModelSwitch`/`PostModelSwitch`, `SessionEnd`, `StopFailure`, `SubagentStart`, `WorktreeCreate`/`Remove`. Those take `command`, `http` and `mcp_tool` only.
 
-For `PermissionDenied` and `PermissionRequest`, prompt/agent hooks run but their output is discarded. Use command hooks for actual decision control on those.
+`SessionStart` and `Setup` are narrower still: **`command` and `mcp_tool` only** — no `http`, `prompt` or `agent`.
+
+`PermissionRequest` supports `command`, `http`, `mcp_tool` and `prompt` — **an `agent` hook on it is skipped entirely** and the permission flow proceeds unchanged. For `PermissionDenied`, prompt/agent hooks run but their output is discarded. Use command or HTTP hooks for real decision control on either.
 
 ## Agent-based hooks (`type: "agent"`) — experimental
 
-Subagent with tool access (Read, Grep, Glob, etc.). Multi-turn — 50-turn cap. Same response schema as prompt hooks. Default timeout 60s.
+Subagent with tool access (Read, Grep, Glob, etc.). Multi-turn — 50-turn cap. Default timeout 60s. Supports the same events as prompt hooks **except `PermissionRequest`**.
+
+Response schema is `{ "ok": true }` or `{ "ok": false, "reason": "..." }`. There's no `continueOnBlock` field, and no `impossible`: on `ok: false` Claude Code behaves as though a prompt hook had set `continueOnBlock: true` for that event.
 
 Use when verification needs to inspect actual files or test output, not just the hook input.
 
@@ -520,6 +566,8 @@ CLAUDE_CODE_DEBUG_LOG_LEVEL=verbose claude --debug   # adds matcher counts
 `--debug` does **not** print to terminal — read the file.
 
 ## Security checklist
+
+> **Workspace trust doesn't apply under `-p`.** An interactive session holds back hooks from every settings file — including your own `~/.claude/settings.json` — until you accept the trust dialog for the folder. A `-p` or SDK session never shows the dialog and treats the folder as trusted, so hooks committed in a repository's `.claude/settings.json` **run in a folder you have never trusted**. Before scripting `claude -p` over a repo you didn't write: review its `.claude/` files, use `--bare`, or pass `--settings '{"disableAllHooks": true}'`.
 
 - Quote shell variables (`"$VAR"` not `$VAR`).
 - Check for `..` in file paths (block path traversal).
