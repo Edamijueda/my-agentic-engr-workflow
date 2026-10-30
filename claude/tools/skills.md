@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-30
 sources:
   - https://code.claude.com/docs/en/skills
 ---
@@ -72,7 +72,7 @@ All fields optional except `description` (strongly recommended — without it, C
 
 | Field | Notes |
 | --- | --- |
-| `name` | Display label in listings. **Doesn't change the command** (directory name does — except for plugin-root SKILL.md). |
+| `name` | **Sets the command** in the `/` menu. The directory name is the fallback when `name` is absent — and still invokes the skill either way. |
 | `description` | What the skill does + when to use it. Truncated at **1,536 characters** combined with `when_to_use`. Put the key use case first. |
 | `when_to_use` | Appended to `description` for matching. Same 1,536-char cap. |
 | `argument-hint` | Autocomplete hint, e.g. `[issue-number]`. |
@@ -82,24 +82,29 @@ All fields optional except `description` (strongly recommended — without it, C
 | `allowed-tools` | Pre-approved tools while skill is active. Space- or comma-separated, or YAML list. Workspace-trust gate for project-level. |
 | `disallowed-tools` | Tools removed from Claude's pool while skill is active. Clears when you send next message. |
 | `model` | Override model for this turn only. Session model resumes on next prompt. `inherit` keeps active. |
-| `effort` | Override effort level for this turn. |
+| `effort` | Override effort for this turn: `low`, `medium`, `high`, `xhigh`, `max`. |
 | `context: fork` | Run in a forked subagent. See "Run in a subagent" below. |
 | `agent` | Which subagent type to use when `context: fork` is set. |
-| `hooks` | Hooks scoped to the skill's lifecycle. Format = same as `settings.json` hooks. |
-| `paths` | Glob patterns. Skill only auto-loads when working with matching files. Same format as path-scoped rules. |
+| `hooks` | Registered when the skill is invoked and **kept until the session ends** — not cleared when the skill stops being followed. Format = same as `settings.json` hooks. |
+| `paths` | Glob patterns. Skill only auto-loads when working with matching files. **Only files inside the current working directory count** — a sibling worktree doesn't activate it, even one added with `/add-dir`. Start Claude Code there or `/cd` to it. |
 | `shell` | `bash` (default) or `powershell` for `!`-injection commands. PowerShell requires `CLAUDE_CODE_USE_POWERSHELL_TOOL=1`. |
+| `background` | Only with `context: fork`. `false` waits for the fork's result in the invoking turn. Default `true`. |
+| `metadata` | Free-form key/value map for your own tooling. Claude Code ignores the contents. |
+| `license`, `compatibility` | From the Agent Skills spec. Accepted but not acted on (`compatibility` caps at 500 chars). |
+
+> **Unrecognized fields are ignored without an error**, so a typo'd key does nothing and says nothing. If the YAML itself is malformed, Claude Code loads the body with **empty metadata** — `/skill-name` still works but Claude can't match your `description`. `--debug` shows the parse error, and `claude plugin validate .claude/skills` finds files whose frontmatter doesn't parse (v2.1.233+).
+
+**Portability**: outside Claude Code — claude.ai uploads, the Skills API — only `name`, `description`, `license`, `compatibility`, `metadata` and `allowed-tools` are accepted. Any other key is a **hard error on upload**, so check before reusing a skill elsewhere.
 
 ## How the command name is chosen
 
 | Skill location | Command name source |
 | --- | --- |
-| `~/.claude/skills/foo/SKILL.md` or `.claude/skills/foo/SKILL.md` | Directory name → `/foo` |
-| Nested + name collision (`apps/web/.claude/skills/deploy/`) | Path-qualified → `/apps/web:deploy` |
-| `.claude/commands/foo.md` (legacy) | Filename without ext → `/foo` |
-| Plugin `skills/foo/` subdirectory | Namespaced → `/plugin-name:foo` |
-| Plugin-root `SKILL.md` | Frontmatter `name`, falls back to plugin dir name → `/plugin-name` |
-
-**Plugin-root is the only case where `name` sets the command** (no skill subdir to take it from).
+| `~/.claude/skills/foo/SKILL.md` or `.claude/skills/foo/SKILL.md` | Frontmatter `name`, falling back to the directory name → `/foo` |
+| Nested **and** the name clashes (`apps/web/.claude/skills/deploy/`) | Path-qualified → `/apps/web:deploy`. The root `deploy` keeps `/deploy`. Only happens on a clash |
+| `.claude/commands/foo.md` (legacy) | Filename without ext → `/foo`. Subdirectories join with `:` |
+| Plugin `skills/foo/` subdirectory | Namespaced → `/plugin-name:foo`. A frontmatter `name` replaces the last segment (`/plugin-name:fancy`); since v2.1.246 an already-prefixed `name` isn't doubled |
+| Plugin-root `SKILL.md` | `name` supplies the whole final segment, falling back to the plugin dir name |
 
 ## String substitutions
 
@@ -264,7 +269,9 @@ These appear as commands and work like user skills. Disable globally with `disab
 | `/debug [description]` | Enable debug logging mid-session and analyze. |
 | `/batch <instruction>` | Decompose large change into 5-30 independent units; spawn background subagent per unit in isolated worktree. |
 | `/loop [interval] [prompt]` | Repeat a prompt on a schedule. Self-paces if no interval. |
-| `/claude-api [migrate|managed-agents-onboard]` | Load Claude API reference for your project's language. Auto-activates on `anthropic` or `@anthropic-ai/sdk` imports. |
+| `/claude-api <subcommand>` | Claude API reference for your project's language. Auto-activates on `anthropic` or `@anthropic-ai/sdk` imports. Many subcommands — `migrate`, `upgrade`, `api-version`, `managed-agents-onboard`, `cost-optimize`, `build-eval`, `prompt-audit` and more. |
+| `/doctor [prompt-audit]` | Setup checkup, and an audit of what's loading into your prompt. Also proposes trims for a checked-in `CLAUDE.md`. |
+| `/workflow-authoring` | Only available when dynamic workflows are enabled. |
 | `/run`, `/verify`, `/run-skill-generator` | Launch and drive your app to verify changes. `/run-skill-generator` records the recipe as a per-project skill at `.claude/skills/run-<name>/`. |
 | `/fewer-permission-prompts` | Scan transcripts for common read-only Bash + MCP calls; add prioritized allowlist to project `.claude/settings.json`. |
 
@@ -299,6 +306,8 @@ Plugin skills aren't affected — manage those through `/plugin`.
 
 Adding, editing, or removing a skill under `~/.claude/skills/`, project `.claude/skills/`, or a `--add-dir` `.claude/skills/` takes effect within the current session — no restart.
 
+> **If personal skill folders vanish**, look in `~/.claude/skills/.trash/`. Skills synced from claude.ai land in a separate `synced` subfolder and don't touch folders you created. Before v2.1.280, a `manifest.json` in `~/.claude/skills/` could move the folders it listed into a timestamped folder under `.trash/`. Restore by moving the folder back — the retention sweep deletes trash entries after 30 days.
+
 > **Exception**: creating a top-level `.claude/skills/` dir that didn't exist when the session started requires restart so the dir can be watched.
 
 Live change covers `SKILL.md` text only. For skill folders that are also plugins (`.claude-plugin/plugin.json` inside), changes to `hooks/`, `.mcp.json`, `agents/`, `output-styles/` need `/reload-plugins`.
@@ -329,7 +338,10 @@ Skill descriptions are loaded into Claude's context every turn so it knows what'
 
 When descriptions are cut, Claude can't match your request to the skill. Diagnostics:
 
-- `/doctor` — see how many descriptions are shortened/dropped and which skills are affected.
+- `/doctor` — estimate of the listing's context cost and its biggest contributors.
+- `/skill-doctor` — which skills are unused and worth turning off.
+- `/context` — the Skills row reports the listing size **after** the budget is applied, so it matches what the model receives (before v2.1.196 it showed the full untrimmed text).
+- `--debug` — a warning is written to the debug log whenever the listing overflows.
 
 Knobs:
 
@@ -337,10 +349,12 @@ Knobs:
 | --- | --- |
 | `skillListingBudgetFraction` (e.g. `0.02` = 2%) | Raise the budget. |
 | `SLASH_COMMAND_TOOL_CHAR_BUDGET` env var | Fixed character cap. |
-| `maxSkillDescriptionChars` (default 1,536) | Per-skill cap. |
+| `skillListingMaxDescChars` (default 1,536) | Per-entry cap on `description` + `when_to_use`. |
 | `skillOverrides: { ..: "name-only" }` | Free budget for other skills. |
 
 Trim the source: put the key use case first in `description`. Move overflow to `when_to_use` (still capped together at 1,536).
+
+> `<` and `>` in `description` and `when_to_use` render as `&lt;` and `&gt;`. For a placeholder, use square brackets (`[branch]`) or move it to `argument-hint`.
 
 ## Evals (`skill-creator` plugin)
 
