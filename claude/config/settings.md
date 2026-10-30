@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-30
 sources:
   - https://code.claude.com/docs/en/settings
   - https://code.claude.com/docs/en/settings-reference
@@ -12,22 +12,27 @@ How Claude Code is configured — the central file is `settings.json`, but there
 
 ## Mental model: scopes + precedence
 
-Four scopes, **highest precedence first**:
+**Five levels, highest precedence first.** (Four of them are files; command line is a level but not a file.)
 
 | # | Scope | Where | Notes |
 | - | --- | --- | --- |
-| 1 | **Managed** | Server-managed, MDM/registry/plist, or system `managed-settings.json` | Org policy. Can't be overridden by anything below — not even CLI args. |
-| 2 | **CLI arguments** | `--settings <file-or-json>` | Per-session override. |
+| 1 | **Managed** | Server-managed, MDM/plist, or system `managed-settings.json` | Org policy. Not overridable from below — **except for a short list of keys where a stricter value wins from any scope**; see below. A managed `model` is a starting default, not a lock — the locks are `availableModels` and `deniedModels`. |
+| 2 | **CLI arguments** | `--settings <file-or-json>` | Per-session override, inline JSON or a file path. Can set anything user settings can — **but not Managed or Global config keys**. Other flags like `--model` aren't part of this stack; they override their own key for the session. |
 | 3 | **Local project** | `.claude/settings.local.json` | Personal, per-repo. Gitignored when Claude Code creates it; **add it yourself if you create it manually**. |
 | 4 | **Project shared** | `.claude/settings.json` | Committed to git, team-shared. |
 | 5 | **User** | `~/.claude/settings.json` | Personal, all projects. |
 
+**Environment variables aren't a level in this stack.** Where a behaviour has both a shell variable and a settings key, which wins is decided per pair: `ANTHROPIC_MODEL` beats the `model` key from any file, while `ANTHROPIC_DEFAULT_MODEL` applies only when no file sets `model`. An `env` block *inside* a settings file is an ordinary key and follows the levels above.
+
 **Scalar values** (booleans, strings, numbers): higher scope wins.
 **Array values** (`permissions.allow`, `sandbox.filesystem.allowWrite`, etc.): **merged and deduplicated across scopes**, not replaced. So a managed `allowWrite: ["/opt/tools"]` plus user `allowWrite: ["~/.kube"]` yields both.
 
-Two array exceptions:
-- `fallbackModel` — highest-precedence scope supplies the entire chain.
-- `availableModels` — when set in managed/policy, lower-precedence entries are replaced.
+**Four exceptions** where a list doesn't merge:
+
+- `fallbackModel` — position carries meaning, so the highest-precedence file supplies the whole chain.
+- `modelPicker` — one ordered list plus a replace flag; never merged. Taken from the highest of managed / `--settings` / user, and **ignored entirely in project and local settings** (v2.1.242+).
+- `availableModels` — when managed settings define it, that list applies as-is and user/project/local entries are ignored. Across non-managed scopes it merges normally.
+- `modelSettings` — resolved one model at a time, together with `effortLevel`.
 
 ## Other config files in the neighborhood
 
@@ -39,9 +44,9 @@ Two array exceptions:
 | `.mcp.json` | Project-scoped MCP server config. |
 | `~/.claude/agents/` and `.claude/agents/` | Subagent markdown files. |
 | `~/.claude/CLAUDE.md`, `./CLAUDE.md`, `./CLAUDE.local.md` | Memory. See `memory.md`. |
-| `.claude/settings.local.json` | Local-scope settings (also lives under `.claude/`). |
+| `.claude/settings.local.json` | Local-scope settings. **In a git repo, read and written at the repository root** even when you start in a subdirectory (a worktree uses the main checkout's root). It stays beside `.claude/settings.json` instead when you're outside a repo, when the repo root is your home directory, or when ownership doesn't match your user. Before v2.1.211 it lived in the starting directory. |
 
-Backups: Claude Code auto-snapshots config files, retains the last 5.
+Backups: before each write to `~/.claude.json`, Claude Code saves `~/.claude/backups/.claude.json.backup.<timestamp>` and keeps the five most recent.
 
 ## Managed settings (org-deployed)
 
@@ -56,7 +61,33 @@ Multiple delivery channels, all loading the **same JSON shape** (`managed-settin
 
 **Within the managed tier**, precedence is: server-managed > MDM/OS > file-based (drop-in + base). Only one managed source loads — they do not merge across tiers.
 
-**Managed parsing is tolerant**: an invalid entry is stripped + logged, the rest enforces. User/project/local files are strict — a single bad value rejects the whole file.
+### Where a lower scope beats managed
+
+For a handful of keys that *restrict* a session, Claude Code honors the stricter value from a scope that otherwise couldn't override managed. The ones likely to matter outside an org:
+
+| Key | Stricter value honored from |
+| --- | --- |
+| `enableArtifact: false` (or `disableArtifact: true`) | Any scope — and nothing turns artifacts back on (v2.1.242+) |
+| `permissions.blockReadsOutsideWorkingDirectories: true` | Any scope (v2.1.257+) |
+| `maxEffortLevel` | Any scope, including `--settings` — the **lowest** cap applies (v2.1.267+) |
+| `disableClaudeAiConnectors: true`, `isolatePeerMachines: true` | Any scope |
+| `useAutoModeDuringPlan: false`, `syncClaudeAiSkills: false`, `syncClaudeAiPlugins: false` | Managed, `--settings`, user, or **local** — but a `false` in shared project settings is ignored |
+
+Full list, including `crossSessionInbound` and `remoteControlAtStartup`: [settings precedence exceptions](https://code.claude.com/docs/en/settings#exceptions-to-managed-settings-precedence).
+
+**Managed parsing is tolerant**: an invalid entry is stripped + logged, the rest enforces.
+
+For user/project/local files the failure mode depends on the damage:
+
+| What's wrong | What happens |
+| --- | --- |
+| Invalid JSON, or a value the schema rejects | **Settings Error** — a dialog at the start of an interactive session offering to fix it with Claude's help, exit, or continue without that file's settings |
+| Individual entries fail (malformed permission rule, unknown hook event) | **Settings Warning** — those values are skipped, the rest of the file stays in effect |
+| `~/.claude.json` can't be parsed | **Configuration error** — the file is copied to `~/.claude/backups/.claude.json.corrupted.<timestamp>` and you're asked to fix it by hand or reset |
+
+A `-p` run shows no dialog: it skips the broken file or values and continues, so run `claude doctor` afterwards to see what was dropped.
+
+Settings files are **strict JSON** — a `//` comment or trailing comma is a syntax error.
 
 Security-critical fields (e.g. `allowedMcpServers`, `forceLoginOrgUUID`) fail closed: if the value is wholly invalid, the field acts as the most restrictive interpretation (empty allowlist = block all). Two exceptions: `requiredMinimumVersion` / `requiredMaximumVersion` fail open — a bad version policy can't lock you out.
 
@@ -75,9 +106,13 @@ Security-critical fields (e.g. `allowedMcpServers`, `forceLoginOrgUUID`) fail cl
 
 Most edits apply to the running session — Claude Code watches the files. The `ConfigChange` hook fires for each detected change. Covers `permissions`, `hooks`, `apiKeyHelper`, and most flags.
 
-**Restart-required keys:**
-- `model` — use `/model` mid-session instead.
-- `outputStyle` — rebuilds with `/clear` or restart (it's part of the system prompt).
+The hook doesn't fire for managed settings arriving from MDM or the claude.ai console — those reach a running session on a schedule, not on save.
+
+**Read once at session start**, so a mid-session edit doesn't apply:
+- `model` — use `/model` instead. Each model has its own prompt cache, so the switch costs one uncached turn.
+- `effortLevel` and `modelSettings` — use `/effort` instead.
+
+(`outputStyle` used to belong here. Since v2.1.251 a mid-session switch applies from your next message — see [`../tools/prompt-caching.md`](../tools/prompt-caching.md).)
 
 ## Useful keys (curated for solo coding-agent workflow)
 
@@ -87,11 +122,12 @@ The full list is enormous. The keys below are the ones most likely to matter day
 
 | Key | What it does |
 | --- | --- |
-| `model` | Default model (overridden by `--model` and `ANTHROPIC_MODEL`). |
-| `fallbackModel` | Ordered chain (max 3) to try when the primary is overloaded. `"default"` expands. |
-| `effortLevel` | Persist `/effort` (`"low"`, `"medium"`, `"high"`, `"xhigh"`). |
+| `model` | Default model. `--model` and `ANTHROPIC_MODEL` override it for a session, an `availableModels` list still constrains the choice, and an **organization default model wins over your user, project and local files**. |
+| `fallbackModel` | Ordered chain tried when the primary is overloaded or unavailable. `"default"` expands. Claude Code keeps at most **three distinct allowed** models and ignores the rest. |
+| `effortLevel` | `"low"`, `"medium"`, `"high"`, `"xhigh"`. **Scope changes who it applies to**: in `~/.claude/settings.json` it affects only older models — Opus 5.5 and later ignore it. From project, local, managed, or `--settings` it applies to every model. `/effort` saves per-model under `modelSettings` (v2.1.251+). |
+| `maxEffortLevel` | Caps effort (`"max"` = no cap). Lowest cap across scopes wins, including from `--settings`. Per-model caps go inside `modelSettings`. v2.1.267+. |
 | `outputStyle` | System-prompt style (e.g. `"Explanatory"`). |
-| `alwaysThinkingEnabled` | Default extended thinking on. Disable per-session with `MAX_THINKING_TOKENS=0` in `env`. |
+| `alwaysThinkingEnabled` | Thinking is on by default, so `true` does nothing; `false` turns it off. **No effect on models that always think** — Opus 5.5, Sonnet 5.5, Haiku 5.5 and the Fable models — so on a current model this key is inert. `MAX_THINKING_TOKENS` overrides it for one session. |
 
 ### Editor + UI
 
@@ -140,7 +176,7 @@ The full list is enormous. The keys below are the ones most likely to matter day
 | --- | --- |
 | `permissions.allow / ask / deny` | Rule arrays. |
 | `permissions.additionalDirectories` | Extra working dirs for file access. |
-| `permissions.defaultMode` | Default `/permissions` mode. Project/local cannot set `auto`. |
+| `permissions.defaultMode` | Starting permission mode. **Project and local settings can't set `auto` or `bypassPermissions`** — use user or managed settings, or `--permission-mode` for one session. (Before v2.1.257, `bypassPermissions` took effect from any file.) |
 | `sandbox.*` | Sandbox config — full section below. |
 
 ### Hooks + env + customization
@@ -205,6 +241,16 @@ For copying gitignored files like `.env` into worktrees, use a `.worktreeinclude
 
 `includeCoAuthoredBy` is deprecated — use `attribution` instead. To hide everything: set both strings to `""` and `sessionUrl: false`.
 
+## Cloud sessions read a different subset
+
+A cloud session runs on a fresh clone, not your machine:
+
+- **Not read at all**: `~/.claude/settings.json` and `.claude/settings.local.json` — one stays on your machine, the other isn't in the clone.
+- **`.claude/settings.json`**: read in a single-repository session outside a project's threads. In a multi-repository session only `enabledPlugins` and `extraKnownMarketplaces` are read. In a cloud thread inside a project, **none** of it applies.
+- **Managed**: a local `managed-settings.json` or MDM profile doesn't reach a cloud session; server-managed settings from the console do.
+
+To change something for a cloud session, set an environment variable on the environment, or commit the key in the single-repository case.
+
 ## Global config (`~/.claude.json`) — not in `settings.json`
 
 These keys live in `~/.claude.json` and will error if put in `settings.json`:
@@ -214,7 +260,11 @@ These keys live in `~/.claude.json` and will error if put in `settings.json`:
 | `autoConnectIde` | Auto-connect to a running IDE from an external terminal. |
 | `autoInstallIdeExtension` | Auto-install Claude Code extension when started from VS Code terminal. Default `true`. |
 | `externalEditorContext` | Prepend previous response as `#`-commented context when opening external editor (`Ctrl+G`). |
-| `teammateDefaultModel` | Default model for agent-team teammates when not specified. |
+| `diffTool` | External diff tool. |
+
+Also global-config-only: `claudeInChromeDefaultEnabled`, `copyFullResponse`, `copyOnSelect`, `defaultToAgentsView`, `leftArrowOpensAgents`, `prStatusFooterEnabled`.
+
+**Removed, don't set them:** `teammateDefaultModel` (removed v2.1.234) and `permissionExplainerEnabled` (removed v2.1.257).
 
 Pre-v2.1.119 versions also stashed `theme`, `verbose`, `editorMode`, `autoCompactEnabled`, `preferredNotifChannel` here. Modern versions put them in `settings.json`.
 
