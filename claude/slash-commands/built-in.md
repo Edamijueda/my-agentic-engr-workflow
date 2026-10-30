@@ -108,7 +108,7 @@ The official doc groups commands by where they fit in a session. This is the mos
 
 ### Interactive features
 
-- `/goal [condition|clear]` — Claude keeps working across turns until condition is met. `clear`/`stop`/`off` to remove.
+- `/goal [condition|clear]` — Claude keeps working across turns until the condition is met. A separate evaluator judges it after every turn, but **only from what's in the conversation** — it can't run commands, so write conditions Claude's own output demonstrates. One per session; `clear`/`stop`/`off` to remove. Doesn't change permission mode. See [`../workflows/verification-ladder.md`](../workflows/verification-ladder.md).
 - `/loop [interval] [prompt]` **(Skill)** (alias `/proactive`) — repeat a prompt while session stays open. No interval = Claude self-paces. No prompt = autonomous maintenance from `.claude/loop.md` if present.
 - `/fast [on|off]` — toggle fast mode (Opus-only typically). See `../tools/prompt-caching.md` for cache implications.
 - `/sandbox` — toggle sandbox mode (supported platforms only).
