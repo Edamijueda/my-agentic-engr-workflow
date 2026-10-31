@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-31
 sources:
   - https://code.claude.com/docs/en/tools-reference
 ---
@@ -35,8 +35,8 @@ Grouped by purpose. **P** = permission required.
 | `Write` | Yes | Whole-file overwrite or new file. No append/merge. |
 | `Edit` | Yes | Exact string replacement. Read-before-edit required. |
 | `NotebookEdit` | Yes | Jupyter cells by `cell_id`. Uses `Edit(path)` rule format. |
-| `Glob` | No | Files by name pattern. **Does NOT** respect `.gitignore` by default. |
-| `Grep` | No | File contents (ripgrep regex). **Respects** `.gitignore`. |
+| `Glob` | No | Files by name pattern. **Absent from the default tool set on macOS, Linux and WSL** — see below. Doesn't respect `.gitignore` by default. |
+| `Grep` | No | File contents. Uses **ripgrep** regex, not POSIX — `interface{}` needs `interface\{\}`. **Absent by default on macOS, Linux and WSL** under the same conditions as `Glob`. Respects `.gitignore`. A pattern ripgrep rejects now returns its diagnostic rather than `No files found` (v2.1.208+). |
 | `LSP` | No | Language-server-driven code intelligence. Inactive without a code-intelligence plugin. |
 
 ### Shell
@@ -60,8 +60,11 @@ Grouped by purpose. **P** = permission required.
 | --- | --- | --- |
 | `Agent` | No | Spawns a subagent in its own context, or forks the parent conversation. |
 | `Skill` | Yes | Executes a skill in the main conversation. |
-| `SendMessage` | No | Message an agent-team teammate or resume a subagent by ID. |
-| `EnterWorktree` / `ExitWorktree` | No | Git worktree management. |
+| `SendMessage` | No | Message an agent-team teammate, resume a subagent by ID or name, or reach another of your Claude Code sessions (v2.1.224+). Optional `summary` gives a one-line preview. |
+| `ListAgents` | No | Lists what `SendMessage` can reach. Only in sessions where cross-session messaging is enabled (v2.1.224+). |
+| `SubagentHandback` | No | Delivers a subagent's final report onward. **Auto mode only**, for locally-run non-fork subagents, and the classifier reviews the report first (v2.1.271+). |
+| `EnterWorktree` | **Yes** | Creates an isolated worktree and switches into it. A `path` outside `.claude/worktrees/` prompts, since it moves the session's working directory. |
+| `ExitWorktree` | No | Returns to the original directory. Unavailable to a subagent already pinned to its own directory (`isolation: worktree`). |
 
 ### Modes / planning
 
@@ -75,17 +78,20 @@ Grouped by purpose. **P** = permission required.
 
 | Tool | P | Notes |
 | --- | --- | --- |
-| `TaskCreate` / `TaskGet` / `TaskList` / `TaskUpdate` / `TaskStop` | No | Session task checklist. |
-| `TaskOutput` | No | **Deprecated** — `Read` the task's output file path instead. |
-| `TodoWrite` (legacy) | No | **Disabled by default** in favor of `Task*`. Re-enable with `CLAUDE_CODE_ENABLE_TASKS=0`. |
+| `TaskCreate` / `TaskGet` / `TaskList` / `TaskUpdate` | No | Session task checklist. **Only in the default tool set on Opus 4.7, Sonnet 4.6, Haiku 4.5 and earlier** — see below. |
+| `TaskStop` | No | Stops a background task by ID; also accepts a teammate or named background agent. Not model-gated. |
+| `TaskOutput` | — | **Removed in v2.1.277.** `Read` the background task's output file instead. |
+| `TodoWrite` (legacy) | No | Off by default in favour of `Task*`, and subject to the same model gating. `CLAUDE_CODE_ENABLE_TASKS=0` swaps it in where those tools exist. |
+
+> **On a current model there is no task checklist by default.** The task-tracking tools ship only on Opus 4.7 / Sonnet 4.6 / Haiku 4.5 and earlier; on anything newer Claude Code leaves them out, on the reasoning that newer models track multi-step work without a written list and the definitions cost context. To opt in: `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`, or name a tool in `--allowedTools` or `--tools`. Background and cloud sessions always get them.
 
 ### Scheduling
 
 | Tool | P | Notes |
 | --- | --- | --- |
 | `CronCreate` / `CronDelete` / `CronList` | No | Session-scoped scheduled prompts; restored on `--resume` / `--continue` if unexpired. |
-| `ScheduleWakeup` | No | Claude calls internally for self-paced `/loop`. Anthropic-only. |
-| `RemoteTrigger` | No | Routines on claude.ai. Pro/Max/Team/Enterprise. Anthropic-only. |
+| `ScheduleWakeup` | No | Claude calls it internally at the end of each self-paced `/loop` iteration to pick the next time (1 min–1 hour), or with `stop: true` to end the loop. The pending wakeup shows in `session_crons` in Stop-hook input. |
+| `RemoteTrigger` | No | Cloud scheduled tasks on claude.ai (formerly routines); backs `/schedule`. **Pro/Max/Ultra/Team/Enterprise.** |
 
 ### MCP
 
@@ -100,15 +106,19 @@ Grouped by purpose. **P** = permission required.
 
 | Tool | P | Notes |
 | --- | --- | --- |
-| `PushNotification` | No | Desktop + phone push when Remote Control is connected. Anthropic-only. |
+| `PushNotification` | No | Desktop push, plus phone push when Remote Control is connected. Runs through Anthropic-hosted infrastructure, so unavailable on Bedrock, Claude Platform on AWS, Google Cloud's Agent Platform and Microsoft Foundry. |
+| `SendUserFile` | No | Sends a file from the session to your device with an optional caption. `display: render` opens it inline, `attach` shows a download card. Needs a Remote Control client or a cloud session; same provider exclusions. |
 
 ### Workflows / artifacts / sharing
 
 | Tool | P | Notes |
 | --- | --- | --- |
-| `Workflow` | Yes | Run a dynamic workflow (orchestrates many subagents). |
-| `Artifact` | Yes | Publish HTML/Markdown as a private claude.ai page. Pro/Max/Team/Enterprise. See [`artifacts.md`](artifacts.md). |
-| `ShareOnboardingGuide` | Yes | Upload `ONBOARDING.md` and return a share link. Pro/Max/Team/Enterprise. |
+| `Workflow` | Yes | Run a dynamic workflow (orchestrates many subagents, one consolidated result). |
+| `ReportFindings` | No | Returns code-review findings as a structured list so Claude Code renders them instead of printing text. Called when review instructions ask for it. |
+| `SendFeedback` | No | Drafts a feedback report and queues it locally for you to review — **nothing is sent until you choose to send it** (v2.1.238+). |
+| `EndConversation` | No | Ends the session, for sustained abusive input. See below. |
+| `Artifact` | Yes | Publish HTML/Markdown as a private claude.ai page. **Pro/Max/Ultra/Team/Enterprise** plus a `/login` session. See [`artifacts.md`](artifacts.md). |
+| `ShareOnboardingGuide` | Yes | Upload `ONBOARDING.md` and return a share link. **Team and Enterprise only.** |
 
 ## Rule formats (per tool)
 
@@ -186,6 +196,18 @@ Read only handles files — use `ls` via Bash for directories.
 **Write** creates new files or overwrites whole files. No append, no merge. **Same read-before-edit constraint applies when overwriting existing files** — new files don't need a prior read. Bash view satisfies it under the same rules as Edit.
 
 For partial changes to existing files, use Edit instead of Write.
+
+### Glob and Grep are absent by default on macOS
+
+On Windows both are in the default tool set. **On macOS, Linux and WSL they are not.** Claude searches with `find` and `grep` through the **Bash tool** instead — in Claude's shell those run embedded `bfs` and `ugrep`.
+
+The consequence worth internalising: **those searches reach your hooks and permission rules as `Bash` calls, not as `Glob` or `Grep`.** A `Grep(...)` deny rule or a `PreToolUse` matcher on `Grep` matches nothing on this platform, because the tool never fires.
+
+You get the two tools back when:
+
+- You name `Glob` or `Grep` in `--tools` or `--allowedTools` at launch (naming either in `--allowedTools` restores both). **An allow rule in a settings file does not do this.**
+- A deny rule, `--disallowedTools`, or `--restricted` removes `Bash` from the session.
+- A subagent lists `Glob` or `Grep` in `tools` and leaves out `Bash` — for that subagent, or for the whole session via `--agent`.
 
 ### Grep
 
@@ -322,32 +344,42 @@ To limit subagent reach: narrow `tools`, leave Bash off, or set deny rules in se
 - **`Skill`** — execute a skill in the main conversation. Permission via `Skill(name)` or `Skill(name *)` rules.
 - **`SendMessage`** — agent-team teammate message or subagent resume by ID. Stopped subagents auto-resume in background.
 - **`Cron*`** — session-scoped scheduling. Restored on `--resume`/`--continue` if unexpired.
-- **`ScheduleWakeup`** — Claude calls internally for self-paced `/loop` (pick next iteration time, 1 min to 1 hour). Pending wakeup appears in `session_crons` in `Stop` hook input. Anthropic-only.
-- **`RemoteTrigger`** — backs `/schedule`. Routines on claude.ai. Pro/Max/Team/Enterprise. Anthropic-only.
+- **`ScheduleWakeup`** — Claude calls internally for self-paced `/loop` (pick next iteration time, 1 min to 1 hour), or with `stop: true` to end the loop. Pending wakeup appears in `session_crons` in `Stop` hook input.
+- **`RemoteTrigger`** — backs `/schedule`. Cloud scheduled tasks on claude.ai (formerly routines). Pro/Max/Ultra/Team/Enterprise; not reachable from the four cloud providers.
 - **`Workflow`** — dynamic workflow (many subagents, consolidated result).
-- **`Artifact`** — publishes HTML/Markdown as a private claude.ai page. Pro/Max/Team/Enterprise. Needs a claude.ai login; API-key and cloud-provider sessions can't publish. See [`artifacts.md`](artifacts.md).
-- **`PushNotification`** — desktop + (when Remote Control connected) phone push. Anthropic-only.
-- **`ShareOnboardingGuide`** — `/team-onboarding` share link. Pro/Max/Team/Enterprise.
+- **`Artifact`** — publishes HTML/Markdown as a private claude.ai page. Pro/Max/Ultra/Team/Enterprise. Needs a claude.ai login; API-key and cloud-provider sessions can't publish. See [`artifacts.md`](artifacts.md).
+- **`PushNotification`** — desktop + (when Remote Control connected) phone push. Not reachable from Bedrock, Claude Platform on AWS, Google Cloud's Agent Platform or Microsoft Foundry.
+- **`ShareOnboardingGuide`** — `/team-onboarding` share link. **Team/Enterprise only.**
 - **`ToolSearch` / `WaitForMcpServers`** — MCP infrastructure tools Claude calls automatically.
 - **`Task*` family** — session task checklist; covered in their own section above.
 
 ### Tools not in this catalog
 
 - **Advisor tool** — server-side (the API runs it), not a Claude Code tool. No name for permission rules or hook matchers.
-- **MCP server tools** — added by connecting an MCP server. Naming pattern: `mcp__<server>__<tool>`. Covered in MCP docs (deferred).
+- **MCP server tools** — added by connecting an MCP server. Naming pattern: `mcp__<server>__<tool>`. See [`mcp.md`](mcp.md).
 
 ## Provider availability quick-table
 
-| Anthropic-only (not Bedrock/Vertex/Foundry) |
-| --- |
-| `Monitor` |
-| `PushNotification` |
-| `RemoteTrigger` |
-| `ScheduleWakeup` |
-| `ShareOnboardingGuide` |
-| `Artifact` (also requires Pro/Max/Team/Enterprise and a claude.ai login) |
+Your exact tool set depends on provider, platform, model and settings. The documented restrictions:
+
+| Tool | Restriction |
+| --- | --- |
+| `PushNotification`, `RemoteTrigger` | Not accessible from Bedrock, Claude Platform on AWS, Google Cloud's Agent Platform, Microsoft Foundry |
+| `SendUserFile` | Not available on Bedrock, Google Cloud's Agent Platform, Microsoft Foundry |
+| `EndConversation` | Same provider exclusions, plus a cloud gateway. Also gated on model (Opus 4.8 / Sonnet 5 / Fable 5 and later), on being an interactive terminal session, and on not being `--bare` |
+| `Artifact` | Pro/Max/Ultra/Team/Enterprise and a `/login` session. Fuller matrix in [`artifacts.md`](artifacts.md) |
+| `RemoteTrigger` | Pro/Max/Ultra/Team/Enterprise |
+| `ShareOnboardingGuide` | Team/Enterprise claude.ai subscribers |
+| `Glob`, `Grep` | Absent by default on macOS, Linux and WSL — see above |
+| `Task*`, `TodoWrite` | Default only on Opus 4.7 / Sonnet 4.6 / Haiku 4.5 and earlier |
+| `Monitor` | **Available everywhere**, but on the four cloud providers — or with `DISABLE_TELEMETRY` / `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` set — it needs **v2.1.310 or later** when feature-flag fetching is off |
+| `PowerShell` | Auto-enabled on Windows; opt-in elsewhere |
 
 WebSearch availability: Claude API + Foundry yes, Google Cloud's Agent Platform Claude 4 only, **Bedrock no**.
+
+### `EndConversation` is unblockable by design
+
+It never prompts, `PreToolUse` hooks don't run for it, and while any other tool remains you can't remove it — deny and ask rules naming it have no effect, and neither `--disallowedTools` nor `--tools` drops it. The reasoning: it only ends the conversation, never touching files or data, and a safeguard like that holds only if the session can't switch it off. A `"*"` deny that removes every other tool does remove it too, unless an allow rule names it explicitly. Subagents never get it.
 
 ## Environment variables affecting tool behavior
 
@@ -362,7 +394,9 @@ WebSearch availability: Claude API + Foundry yes, Google Cloud's Agent Platform 
 | `CLAUDE_CODE_USE_POWERSHELL_TOOL` | PowerShell | `=1` enables; on Windows `=0` opts out. |
 | `CLAUDE_CODE_POWERSHELL_RESPECT_EXECUTION_POLICY` | PowerShell | `=1` respects effective machine policy instead of `-ExecutionPolicy Bypass`. |
 | `DISABLE_TELEMETRY`, `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | Monitor | Disables the Monitor tool. |
-| `CLAUDE_CODE_ENABLE_TASKS` | TodoWrite / Task* | `=0` re-enables legacy `TodoWrite` (off by default). |
+| `CLAUDE_CODE_ENABLE_TASKS` | TodoWrite / Task* | `=0` swaps in legacy `TodoWrite` where the task tools exist. |
+| `CLAUDE_CODE_ENABLE_TODO_TOOLS` | Task* | `=1` provides the task tools on **every** model and provider, overriding the default model gating. |
+| `CLAUDE_CODE_SEND_FEEDBACK`, `DISABLE_FEEDBACK_COMMAND` | SendFeedback | `=0` / `=1` respectively remove the tool. `feedbackDrafts: "quiet"` keeps drafting without cards. |
 
 ## Checking what's loaded
 
