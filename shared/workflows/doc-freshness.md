@@ -1,10 +1,3 @@
----
-verified_against: 2.1.308
-verified_on: 2026-10-27
-sources:
-  - https://code.claude.com/docs/en/changelog
----
-
 # Doc freshness: stamps and the refresh pass
 
 Distilled docs rot. The product moves, the page you distilled from gets renamed, and the file on disk keeps asserting last quarter's facts with total confidence. Nothing in the file tells you which.
@@ -41,21 +34,15 @@ Two cheap habits that would have caught this one:
 - **Spot-check while you're there.** Any time you fetch a page for any reason, glance at the claims the repo already makes from it. Free verification, and it is how this error was actually found.
 - **Suspect claims that gate access.** Plan requirements, availability matrices, permission and auth prerequisites. A wrong one fails *silently* — it removes an option instead of producing an error. A wrong command breaks loudly the first time you run it; a wrong "requires Enterprise" just quietly stops you trying.
 
-### The 2026-10-27 cohort
+### The 2026-10-27 cohort, and what cleared it
 
-`verified_on: 2026-10-27` is not a normal stamp. It came from the bulk pass that introduced this convention, which checked specific drift patterns — model names, provider renames, dead URLs, version gates — rather than reading each doc end to end against its sources.
+`verified_on: 2026-10-27` came from the bulk pass that introduced this convention, which checked specific drift patterns — model names, provider renames, dead URLs, version gates — rather than reading each doc end to end against its sources.
 
-Treat that date as **weaker evidence** than one set by a genuine re-read, and clear the cohort first when you next do a full pass. The `Artifact` error lived in one of them. To list what's left:
+A verification round cleared it. Across the six reference docs plus the remainder, **128 corrections** were found against roughly 390 checkable claims — about one in three. The pattern was consistent: every doc had the right mental model and the wrong details. Not one needed its argument changed; they needed their tables corrected.
 
-```bash
-git ls-files '*.md' | while read -r f; do
-  awk -v F="$f" 'NR==1 && $0 != "---" { exit }
-                 NR>1  && $0 == "---" { exit }
-                 /^verified_on: 2026-10-27$/ { print F }' "$f"
-done
-```
+Two docs still read `2026-10-27`, and that date is **correct** rather than stale: `claude/tools/prompt-caching.md` and `claude/slash-commands/built-in.md` were genuinely read against their sources that day, and sections of both were rewritten from that reading. A stamp records when a doc was read, so bumping them to a later date would be the dishonest move.
 
-As that list shrinks, so does the repo's exposure to the kind of error a stamp can't catch.
+Four docs lost their stamps entirely, under the assert-versus-delegate test above.
 
 ## The stamp
 
@@ -81,20 +68,25 @@ sources:
 
 ### Which docs get stamped
 
-Stamp a doc when a product change could make it wrong:
+**The test is whether the doc *asserts* product facts or *delegates* them.** A doc that says "`timeout` defaults to 600 seconds" can be wrong on its own. A doc that says "see `hooks.md` for the timeouts" can't — it rots only if `hooks.md` rots, and `hooks.md` is stamped. Stamping a delegating doc adds a verification obligation with no information behind it.
 
-- All of `claude/` — every file there describes Claude Code mechanics.
+Stamp:
+
+- Reference docs under `claude/` — the ones that state mechanics: settings keys, tool names, matcher values, flags, limits.
 - `shared/project-setup/` — install steps, settings templates, command names.
-- `shared/workflows/` — these name real commands and flags, so they drift with the product even though the practice around them doesn't.
 - `research/anthropic/` — raw notes are the most perishable content in the repo.
+- Any workflow that names real commands and flags of its own.
 
 Leave unstamped:
 
 - **`shared/principles/`** — durable reasoning. "Context is finite" does not expire.
+- **Delegating workflows** — `plan-first.md`, `memory-curation.md`, `custom-subagent-creation.md`, `scaffolding-decision.md` and this file. They describe practice and point at the reference docs for every mechanic.
 - **READMEs** — navigational. They rot when the repo's structure changes, which `git log` already tells you.
 - **Root `CLAUDE.md`** — describes this repo, not the product.
 
-Omit `sources` when a doc isn't distilled from a published page — several workflows came out of practice rather than documentation. Keep `verified_against` and `verified_on` regardless: the claims still age.
+Omit `sources` when a doc isn't distilled from a published page. Keep `verified_against` and `verified_on` regardless: the claims still age.
+
+> This split was made after the first full verification round. Before it, every `claude/` and `shared/workflows/` file carried a stamp, including four that assert nothing verifiable — which meant the stale list always had four entries that no amount of checking could clear.
 
 ### Keep volatile facts out of durable docs
 

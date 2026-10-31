@@ -1,10 +1,3 @@
----
-verified_against: 2.1.308
-verified_on: 2026-10-27
-sources:
-  - https://code.claude.com/docs/en/memory
----
-
 # Memory curation
 
 `CLAUDE.md` isn't write-once. It curates as the project evolves and as you learn what works.

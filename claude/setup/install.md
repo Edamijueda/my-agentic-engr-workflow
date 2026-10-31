@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-31
 sources:
   - https://code.claude.com/docs/en/setup
 ---
@@ -36,7 +36,7 @@ claude doctor          # health check; also reports the last update attempt
 | --- | --- |
 | **Native installer** (above, recommended) | Yes, in background |
 | Homebrew | No — `brew upgrade`. Cask name picks the channel (`claude-code` = stable, `claude-code@latest` = latest), and `autoUpdatesChannel` is ignored. |
-| npm | No — installs the same native binary. If the npm global dir isn't writable, auto-update fails silently. |
+| npm | No — installs the same native binary (requires **Node.js 22+**; the binary itself doesn't use Node at runtime). If the npm global dir isn't writable, auto-update fails silently. Upgrade with `npm install -g @anthropic-ai/claude-code@latest`, not `npm update -g`. |
 | Desktop app | Self-managed |
 
 `CLAUDE_CODE_PACKAGE_MANAGER_AUTO_UPDATE=1` lets Claude Code run the `brew upgrade` for you in the background.
@@ -58,7 +58,7 @@ Native installs check on startup and periodically while running. Updates downloa
 { "autoUpdatesChannel": "stable" }
 ```
 
-`stable` is the lower-friction default for work you can't afford to have wobble.
+`stable` is the lower-friction default for work you can't afford to have wobble. One caveat: **a newly launched model can require a version newer than stable serves** — move to `latest` if you need it immediately.
 
 ### Pinning and disabling
 

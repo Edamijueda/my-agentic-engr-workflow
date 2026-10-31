@@ -1,10 +1,3 @@
----
-verified_against: 2.1.308
-verified_on: 2026-10-27
-sources:
-  - https://code.claude.com/docs/en/features-overview
----
-
 # Scaffolding decision
 
 You spotted friction worth scaffolding (rule of three from [`defer-until-friction`](../../shared/principles/defer-until-friction.md)). Now: **which mechanism do you reach for?**

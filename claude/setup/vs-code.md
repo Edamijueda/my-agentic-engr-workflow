@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-31
 sources:
   - https://code.claude.com/docs/en/vs-code
 ---
@@ -209,20 +209,28 @@ A dozen tools, but only two visible to Claude:
 | Tool | Effect | Writes? |
 | --- | --- | --- |
 | `mcp__ide__getDiagnostics` | Language-server diagnostics (Problems panel content). Optionally scoped to one file. | No |
-| `mcp__ide__executeCode` | Runs Python in active Jupyter notebook's kernel. **Always prompts via Quick Pick** (Execute / Cancel / `Esc` = cancel). Refuses if no active notebook, Jupyter ext (`ms-toolsai.jupyter`) not installed, or kernel isn't Python. | Yes |
+| `mcp__ide__executeCode` | Runs Python in active Jupyter notebook's kernel. Inserts a cell. **Always prompts via Quick Pick** (Execute / Cancel / `Esc` = cancel). Refuses if no active notebook, Jupyter ext (`ms-toolsai.jupyter`) not installed, or kernel isn't Python. | Yes |
 
 > **Quick Pick confirmation is separate from `PreToolUse` hooks.** An allowlist entry for `mcp__ide__executeCode` lets Claude **propose** running a cell; the Quick Pick is what lets it **actually** run.
 
 The other ten tools are internal RPC (open diffs, read selections, save files) and filtered out before the tool list reaches Claude.
 
+> **The chat panel uses a second server.** Since v2.1.285 the panel runs `claude-vscode`, exposing `mcp__claude-vscode__getDiagnostics` separately from the `ide` server. To block diagnostics in both places you need both names:
+>
+> ```json
+> { "permissions": { "deny": ["mcp__ide__getDiagnostics", "mcp__claude-vscode__getDiagnostics"] } }
+> ```
+
 ## Extension settings — the useful ones
 
-Open via `Cmd+,` / `Ctrl+,` → Extensions → Claude Code, or type `/` → **General Config**.
+Open via `Cmd+,` / `Ctrl+,` → Extensions → Claude Code, or type `/` → **General Config**. The extension exposes about twenty settings; these are the ones that change how you work. Full list: [VS Code](https://code.claude.com/docs/en/vs-code).
+
+Worth knowing beyond the table below: `attachOpenFile` and `attachSelection` (both default `true`) control whether the open file and editor selection are sent with every message — the privacy-relevant pair. `allowDangerouslySkipPermissions` (default `false`) adds Bypass to the mode selector. `archiveInactiveSessions` defaults to `14` days (`0` disables).
 
 | Setting | Default | Notes |
 | --- | --- | --- |
 | `useTerminal` | `false` | Launch in terminal mode instead of graphical panel. |
-| `initialPermissionMode` | `default` | `default`, `plan`, `acceptEdits`, `bypassPermissions`. Doesn't accept `auto` — set in `~/.claude/settings.json` instead. |
+| `initialPermissionMode` | unset | `default`, `plan`, `acceptEdits`, `bypassPermissions` (`manual` aliases `default`). Doesn't accept `auto`. **Read from user settings only — workspace values are ignored.** Set in `~/.claude/settings.json` instead. |
 | `preferredLocation` | `panel` | `sidebar` (right) or `panel` (tab). |
 | `autosave` | `true` | Auto-save files before Claude reads/writes. |
 | `useCtrlEnterToSend` | `false` | Use `Ctrl/Cmd+Enter` instead of `Enter` to send. |
@@ -321,6 +329,7 @@ rm -rf ~/.config/Code/User/globalStorage/anthropic.claude-code
   - `autosave: true` (default) — saves before Claude reads / writes.
   - `respectGitIgnore: true` (default) — keeps gitignored files out of file searches.
   - `useTerminal: false` (default) — graphical panel for chat, integrated terminal for CLI access.
+- Requires **VS Code 1.94.0 or later**.
 - **Critical**: also install the standalone CLI (see `install.md`) so `claude` works in the integrated terminal. The extension's bundled CLI doesn't add to PATH.
 - **Selection-injection awareness**: the built-in IDE MCP server **always** sends your current selection + active file path to Claude on every prompt. For sensitive files, add a `Read(./.env*)`-style deny rule — covers both the selection and the open-file notice.
 - **JetBrains is not used here** — skipping JetBrains plugin docs.

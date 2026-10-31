@@ -5,7 +5,7 @@ How to prepare a fresh machine to run Claude Code — install, authenticate, and
 ## Current docs
 
 - **[`install.md`](install.md)** — install, update channels and auto-update behaviour, version pinning. **Most directly serves the "prepare a new machine" goal.**
-- **[`authentication.md`](authentication.md)** — login flow + account types, credential storage, the 6-tier authentication precedence, `apiKeyHelper`, long-lived OAuth token for CI (`claude setup-token`).
+- **[`authentication.md`](authentication.md)** — login flow + account types, credential storage, the 7-tier authentication precedence, `apiKeyHelper`, long-lived OAuth token for CI (`claude setup-token`).
 - **[`vs-code.md`](vs-code.md)** — VS Code extension (also works in Cursor + VS Code forks): install, sign-in, prompt-box features, the built-in `ide` MCP server (selection injection — security-relevant), extension settings, shortcuts, URI handler for deep linking.
 
 ## Suggested first-run order

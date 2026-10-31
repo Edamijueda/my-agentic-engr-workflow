@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-31
 sources:
   - https://code.claude.com/docs/en/setup
   - https://code.claude.com/docs/en/authentication
@@ -54,7 +54,7 @@ First launch opens a browser for OAuth. Three fallbacks:
 
 After authentication, run `/status` to confirm. The active auth method should match the plan you expect (Pro / Max / Teams / Enterprise / Console).
 
-> **Free Claude.ai accounts don't include Claude Code access.** You need a paid plan or a Console account.
+> **Free Claude.ai accounts don't include Claude Code access.** You need Pro, Max, Ultra, Team, Enterprise, or a Console account.
 
 Full auth flow incl. Bedrock/Vertex/Foundry, `apiKeyHelper`, and the Pro+API-key gotcha: [`claude/setup/authentication.md`](../../claude/setup/authentication.md).
 
@@ -224,6 +224,6 @@ Calendar a renewal before the year is up.
 
 - [`new-project.md`](new-project.md) — once per project (memory + permissions + plan-mode default).
 - [`claude/setup/install.md`](../../claude/setup/install.md) — install paths, update channels, version pinning.
-- [`claude/setup/authentication.md`](../../claude/setup/authentication.md) — full auth reference (6-tier precedence, `apiKeyHelper`, the Pro+API-key gotcha).
+- [`claude/setup/authentication.md`](../../claude/setup/authentication.md) — full auth reference (7-tier precedence, `apiKeyHelper`, the Pro+API-key gotcha).
 - [`claude/setup/vs-code.md`](../../claude/setup/vs-code.md) — VS Code extension in detail (built-in MCP server, settings, URI handler).
 - [`shared/principles/durability-ladder.md`](../principles/durability-ladder.md) — what crosses machines, what doesn't.
