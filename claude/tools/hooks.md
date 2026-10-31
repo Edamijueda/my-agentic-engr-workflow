@@ -454,7 +454,7 @@ A hook can echo one of the `permission_suggestions` it received as its own `upda
 
 ## Hooks in skills and agents
 
-Hooks can be declared in skill or subagent **frontmatter** — scoped to the component's lifetime, cleaned up when it finishes. For subagents, `Stop` hooks are auto-converted to `SubagentStop`.
+Hooks can be declared in skill or subagent **frontmatter**. For a **skill**, the hook is registered on invocation and stays registered **until the session ends** — it is not removed when Claude stops following the skill. For subagents, `Stop` hooks are auto-converted to `SubagentStop`.
 
 ```yaml
 ---
