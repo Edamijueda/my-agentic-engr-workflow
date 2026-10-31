@@ -9,7 +9,7 @@ Everything specific to Claude Code (CLI, IDE extensions, Agent SDK). Companion t
 Install and authenticate on a new machine.
 
 - **[`install.md`](setup/install.md)** — install, update channels, version pinning.
-- **[`authentication.md`](setup/authentication.md)** — login flow, account types, credential storage per OS, 6-tier auth precedence, `setup-token` for CI.
+- **[`authentication.md`](setup/authentication.md)** — login flow, account types, credential storage per OS, 7-tier auth precedence, `setup-token` for CI.
 - **[`vs-code.md`](setup/vs-code.md)** — VS Code extension (and Cursor / VS Code forks). The built-in `ide` MCP server and the standalone-CLI-also-needed gotcha.
 
 ### [`config/`](config/)

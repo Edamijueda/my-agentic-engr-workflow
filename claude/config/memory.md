@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-31
 sources:
   - https://code.claude.com/docs/en/memory
 ---
@@ -71,11 +71,11 @@ Pick rules over imports when you want path scoping; pick imports when you just w
 
 ## Writing effective instructions
 
-- **Size:** target **under 200 lines per file**. Longer files burn context *and* reduce adherence.
+- **Size:** target **under 200 lines per file**. Longer files burn context *and* reduce adherence. Claude Code skips a file over **4 MiB** entirely.
 - **Structure:** markdown headers and bullets. Claude scans the same way humans do.
 - **Specificity:** "Use 2-space indentation" beats "format code properly." "Run `npm test` before committing" beats "test your changes."
 - **Consistency:** conflicting rules across files → Claude picks arbitrarily. Audit periodically.
-- **HTML comments** (`<!-- … -->`) outside code blocks are **stripped before injection** — free space for human-only notes that don't burn tokens. Inside code blocks they're preserved.
+- **HTML comments** (`<!-- … -->`) outside code blocks are **stripped before injection** — free space for human-only notes that don't burn tokens. Inside code blocks they're preserved, and they stay visible if you open the file with the Read tool.
 
 ## Imports
 

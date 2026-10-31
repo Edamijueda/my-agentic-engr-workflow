@@ -1,10 +1,3 @@
----
-verified_against: 2.1.308
-verified_on: 2026-10-27
-sources:
-  - https://code.claude.com/docs/en/permission-modes
----
-
 # Plan-first
 
 The agent describes what it will do **before** it edits. You approve, refine, or redirect. The single biggest "stay in control" lever.

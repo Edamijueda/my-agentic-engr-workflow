@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-31
 sources:
   - https://code.claude.com/docs/en/authentication
 ---
@@ -77,12 +77,28 @@ The presence of `CLAUDE_CODE_USE_BEDROCK=1`, `_USE_VERTEX=1`, or `_USE_FOUNDRY=1
 
 | OS | Location | Protection |
 | --- | --- | --- |
-| **macOS** | Encrypted Keychain | OS-managed |
+| **macOS** | Encrypted Keychain | OS-managed. **Falls back** to `~/.claude/.credentials.json` (mode `0600`) when the Keychain rejects the write — e.g. locked in an SSH session. A Console login that creates an API key fails outright until the Keychain is writable. |
 | **Linux** | `~/.claude/.credentials.json` | File mode `0600` |
 
 `CLAUDE_CONFIG_DIR` overrides the location where a file is used; on macOS the Keychain stays regardless. Useful when the home directory isn't writable, as in some containers and restricted CI.
 
 Managed via `/login` and `/logout`. **Don't edit `.credentials.json` by hand.** For custom API endpoints use `ANTHROPIC_BASE_URL` (e.g. LLM gateways).
+
+## Renewing a login
+
+Within three days of expiry you get a startup warning: `Your login expires in 3 days · run /login to renew`. It never blocks a request — authentication works until it actually expires, then every model request fails until you sign in. `/status` shows a `Login` row reading `Expired — log in again` before that happens (v2.1.210+).
+
+The warning only appears when a claude.ai login is the active credential — not for a cloud provider, `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` or `apiKeyHelper`. It matters most for unattended work: a background or Remote Control session that outlives its login stops making progress and can't recover.
+
+## Two accounts on one machine
+
+Give each its own config directory and switch with `CLAUDE_CONFIG_DIR`:
+
+```bash
+alias claude-work='CLAUDE_CONFIG_DIR=~/.claude-work claude'
+```
+
+Each directory keeps its own settings, session history and login. (Two keyless Console sign-ins are the exception — that credential is stored outside the config directory.)
 
 ## Authentication precedence
 
@@ -94,8 +110,13 @@ When multiple credentials are present, Claude Code picks one in this order — *
 | 2 | `ANTHROPIC_AUTH_TOKEN` | Sent as `Authorization: Bearer`. For LLM gateways using bearer tokens. |
 | 3 | `ANTHROPIC_API_KEY` | Sent as `X-Api-Key`. Direct Anthropic API access with a key from `platform.claude.com`. |
 | 4 | `apiKeyHelper` script | Dynamic / rotating creds — short-lived tokens from a vault, etc. |
-| 5 | `CLAUDE_CODE_OAUTH_TOKEN` | Long-lived OAuth token from `claude setup-token`. For CI/scripts. |
-| 6 | Subscription OAuth from `/login` | Default for Pro/Max/Team/Enterprise. |
+| 5 | `CLAUDE_CODE_OAUTH_TOKEN` | Long-lived OAuth token from `claude setup-token`. For CI/scripts. If you `/login` while it's set, this session switches — but every new session reads the variable again until you remove it. |
+| 6 | **Anthropic profile / federation credentials** | What the `ant` CLI and Workload Identity Federation use. A named profile (`ANTHROPIC_PROFILE`) or both federation variables rank **above** `/login`; an active `user_oauth` profile ranks **below** a working `/login`. Not read in bare mode, Claude Desktop, or cloud sessions. |
+| 7 | Subscription OAuth from `/login` | Default for Pro/Max/Ultra/Team/Enterprise. |
+
+A signed-in **Claude apps gateway** session sits outside this list entirely: it's a provider selection like Bedrock, and it outranks them — the gateway token is the session's only credential, and nothing above is used.
+
+> **A profile blocks claude.ai features.** While a profile or federation credential is selected, claude.ai connectors and `/schedule` are unavailable. `/status` shows a `Profile` row in place of `Login method`.
 
 ### The Pro + API key gotcha
 
@@ -135,6 +156,8 @@ Default refresh: every **5 minutes** or on HTTP 401 response. Override with `CLA
 
 **Slow-helper warning**: if the script takes >10s, Claude Code shows an elapsed-time notice in the prompt bar. Optimize the script if you see this regularly.
 
+**On failure** — non-zero exit, timeout, or empty output — requests fail with `Your apiKeyHelper script is failing` within three attempts.
+
 The returned key is sent the same way as `ANTHROPIC_API_KEY` (precedence 4, but kicks in only when 1–3 are absent).
 
 ## Long-lived OAuth token (for CI)
@@ -152,9 +175,10 @@ export CLAUDE_CODE_OAUTH_TOKEN=your-token
 ```
 
 Constraints:
-- Requires Pro / Max / Team / Enterprise plan.
+- Requires Pro / Max / **Ultra** / Team / Enterprise plan.
 - Authenticates with your Claude subscription.
-- **Inference only** — cannot establish Remote Control sessions.
+- **Inference only** — can't establish Remote Control sessions or fetch claude.ai connectors. Locally-configured MCP servers still work.
+- The command **doesn't save the token anywhere** — copy it from the terminal.
 - **Bare mode (`--bare`) doesn't read this.** For bare mode, use `ANTHROPIC_API_KEY` or `apiKeyHelper`.
 
 ## Related settings (managed policy)
