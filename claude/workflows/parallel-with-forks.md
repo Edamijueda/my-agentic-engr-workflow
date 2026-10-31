@@ -5,13 +5,15 @@ sources:
   - https://code.claude.com/docs/en/sub-agents
 ---
 
-# Parallel approaches with `/fork`
+# Parallel approaches with `/subtask`
 
 Try multiple approaches from the same starting point. Forks **share the parent's prompt cache** — cheap. Each fork returns a summary back to the main conversation; you compare and pick.
 
 ## The mechanic (Claude-specific)
 
 A fork is a subagent that **inherits the entire parent conversation** — same system prompt, tools, model, message history. The only thing it doesn't inherit is *output*: its tool calls stay in the fork's transcript, only the final result returns to main.
+
+> **The command is `/subtask`, not `/fork`.** With agent view on — the default — `/fork` copies the whole session into a new background session instead. `/fork` only starts a forked subagent when agent view is off.
 
 **Why it's cheap**: a fork's first request reuses the parent's prompt cache because the prefix matches. A fresh subagent has its own cache (separate). For tasks needing the same context, forks are several times cheaper to spin up than fresh subagents.
 
@@ -34,10 +36,10 @@ Full mechanics: [`claude/tools/subagents.md`](../tools/subagents.md) → "Forks"
 ## The pattern
 
 1. **Get the main session to a known-good baseline.** Plan reviewed, exploration done. The fork inherits everything; clutter inherits with it.
-2. **Spawn forks** — `/fork <directive>` with a clear task per fork:
+2. **Spawn forks** — `/subtask <task>` with a clear task per fork:
    ```
-   /fork refactor src/auth/ to use the session cookie approach
-   /fork refactor src/auth/ to use the JWT approach
+   /subtask refactor src/auth/ to use the session cookie approach
+   /subtask refactor src/auth/ to use the JWT approach
    ```
 3. **Continue in main** while forks run. Or wait. Up to you.
 4. **Each fork returns** as a message in main when it finishes. The panel below your prompt shows progress.
@@ -68,7 +70,7 @@ Pair with `/batch` for large-scale parallelism: decompose a change into 5-30 uni
 Fork once to run the test suite while you continue working in main:
 
 ```
-/fork run the full test suite and tell me which tests fail and the root cause
+/subtask run the full test suite and tell me which tests fail and the root cause
 ```
 
 Fork returns a summary; you keep coding.

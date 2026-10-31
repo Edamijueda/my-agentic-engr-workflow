@@ -6,7 +6,7 @@ Goal: each doc readable in 60-90 seconds before starting a task that fits the pa
 
 ## Current docs
 
-- **[`parallel-with-forks.md`](parallel-with-forks.md)** — `/fork` for multiple approaches from the same starting point. Cache-shared with main = cheap. Panel controls, worktree isolation, common mistakes.
+- **[`parallel-with-forks.md`](parallel-with-forks.md)** — `/subtask` for multiple approaches from the same starting point. Cache-shared with main = cheap. Panel controls, worktree isolation, common mistakes.
 - **[`custom-subagent-creation.md`](custom-subagent-creation.md)** — graduating from built-in `Explore`. Rule-of-three trigger, frontmatter starter, `description` that drives delegation, `memory: project` for cross-session learning.
 - **[`scaffolding-decision.md`](scaffolding-decision.md)** — you spotted friction worth scaffolding. Which mechanism? Decision tree across memory / skills / permissions / hooks / subagents / MCP. Cost comparison + worked examples.
 - **[`verification-ladder.md`](verification-ladder.md)** — the four rungs of "how does the agent know it's done" mapped to Claude mechanisms: prompt, `/goal`, `Stop` hook, fresh reviewer. Includes the `/goal` constraint that catches people out.

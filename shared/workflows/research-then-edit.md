@@ -40,7 +40,7 @@ Pick it for those reasons. If none of them apply, just read the files.
 ## The pattern
 
 1. **Phrase the research with the output you want.** "Find all places that call `auth.refreshToken` and return a summary of how each handles errors" beats "look at the auth module."
-2. **Specify the subagent.** "Use the Explore subagent" for read-only research (Haiku-fast, cheap). Use `general-purpose` if the task might need writes. For Claude Code: see [`claude/tools/subagents.md`](../../claude/tools/subagents.md) for the built-in roster.
+2. **Specify the subagent.** "Use the Explore subagent" for read-only research. Use `general-purpose` if the task might need writes. For Claude Code: see [`claude/tools/subagents.md`](../../claude/tools/subagents.md) for the built-in roster.
 3. **Wait for the summary.** Main session shows a brief notice that a subagent is working; the summary returns when it finishes.
 4. **Make the change in main**, with the summary as focused context. You have the synthesized answer, not the raw file contents.
 
@@ -97,7 +97,7 @@ If you're delegating the same kind of research repeatedly, define a custom subag
 ## Per-tool implementation
 
 For Claude Code:
-- **`Explore`** built-in subagent — Haiku, read-only (no Write/Edit). Specify thoroughness: `quick` / `medium` / `very thorough`.
+- **`Explore`** built-in subagent — read-only (no Write/Edit). Specify thoroughness: `quick` / `medium` / `very thorough`. **Not a cheap model**: on a Claude subscription it runs on Opus, so delegating to it is not a cost saving. See [`claude/tools/subagents.md`](../../claude/tools/subagents.md).
 - **`Plan`** built-in subagent — used during plan mode, read-only, inherits model.
 - **`general-purpose`** built-in subagent — inherits model, all tools. Use when research might lead to writes.
 - **Explore and Plan skip CLAUDE.md and git status** — keeps research fast and cheap, but means project conventions don't reach the subagent. Restate critical rules in the delegation prompt.

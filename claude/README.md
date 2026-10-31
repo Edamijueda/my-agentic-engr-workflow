@@ -48,4 +48,4 @@ Claude-specific patterns. Companion to [`../shared/workflows/`](../shared/workfl
 - **[`verification-ladder.md`](workflows/verification-ladder.md)** — prompt / `/goal` / `Stop` hook / fresh reviewer, and when each is the right rung.
 - **[`memory-curation.md`](workflows/memory-curation.md)** — maintaining `CLAUDE.md` over time.
 - **[`custom-subagent-creation.md`](workflows/custom-subagent-creation.md)** — graduating from built-in `Explore`.
-- **[`parallel-with-forks.md`](workflows/parallel-with-forks.md)** — `/fork` for cheap A/B exploration.
+- **[`parallel-with-forks.md`](workflows/parallel-with-forks.md)** — `/subtask` for cheap A/B exploration.

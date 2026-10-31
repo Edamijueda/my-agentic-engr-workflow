@@ -52,7 +52,8 @@ The official doc groups commands by where they fit in a session. This is the mos
 - `/tasks` (alias `/bashes`) — view background processes.
 - `/background [prompt]` (alias `/bg`) — detach session to run as a background agent, freeing your terminal. `claude agents` to monitor.
 - `/batch <instruction>` **(Skill)** — decompose change into 5-30 independent units, one background subagent per unit in an isolated worktree.
-- `/fork <directive>` — spawn a forked subagent that inherits the full conversation. Result returns when it finishes.
+- `/subtask <task>` — spawn a forked subagent that inherits the full conversation. Result returns when it finishes.
+- `/fork` — with agent view on (the default), **copies the whole session into a new background session**. Only starts a forked subagent when agent view is off.
 - `/branch [name]` — branch the conversation at this point. Switches you into the branch; original recoverable via `/resume`.
 
 ### Before you ship
