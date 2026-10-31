@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-30
+verified_on: 2026-10-31
 sources:
   - https://code.claude.com/docs/en/memory
   - https://code.claude.com/docs/en/settings
@@ -86,6 +86,10 @@ Deny things the agent should never do, regardless of how reasonable the request 
   }
 }
 ```
+
+> **The secrets denies are a speed bump, not a boundary.** They stop the Read tool, `@file` mentions, IDE-shared context and a `cat .env` — but not a command that reads without naming the file, and a recursive `grep` from the project root is exactly that. On macOS that's also Claude's default way of searching, since `Grep` isn't a loaded tool.
+>
+> Don't deny `grep` to fix it; you'd break search. If a project's secrets need a real boundary, escalate to a `PreToolUse` hook on `Bash` or `sandbox.filesystem.denyRead`, which is OS-level and catches every subprocess. See [`claude/config/permissions.md`](../../claude/config/permissions.md).
 
 Adapt to the project:
 - **More secrets paths**: any file containing tokens, API keys, or `.env`-like content.

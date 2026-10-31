@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-30
+verified_on: 2026-10-31
 sources:
   - https://code.claude.com/docs/en/permissions
   - https://code.claude.com/docs/en/permission-modes
@@ -163,7 +163,9 @@ Only relevant if you've enabled the PowerShell tool — see [`../tools/tools-ref
 
 ## Read and Edit rules — the anchor traps
 
-`Edit` covers all built-in file-editing tools; `Read` is best-effort across Read, Grep, Glob, `@file` mentions, and IDE-shared context.
+`Edit` covers all built-in file-editing tools. `Read` is best-effort across the built-in tools that read files (Read, and `Grep`/`Glob` where they're loaded), `@file` mentions in your prompts, and the selection and open-file context a connected IDE shares.
+
+> On macOS, Linux and WSL, `Grep` and `Glob` usually aren't loaded — so the part of that coverage you actually get is the Read tool, `@file` mentions and IDE context. See "Read/Edit limits" below for what reaches Bash instead.
 
 **Gitignore semantics with four anchor types:**
 
@@ -180,6 +182,14 @@ Only relevant if you've enabled the PowerShell tool — see [`../tools/tools-ref
 
 `Read(.env)` = `Read(**/.env)` — matches at any depth under the CWD. To match anywhere on the filesystem use the absolute anchor: `Read(//**/.env)`.
 
+### Carve-outs can't reopen a blocked directory
+
+With `Read(secrets/**)` denying and `Read(!secrets/public/**)` carving out, `secrets/public` stays blocked along with the rest — a negation can't reopen a file inside a directory a rule blocks as a whole.
+
+### Network-path reads get their own check
+
+A read from a path that can reach another machine — a UNC path on Windows, a `/net` automount path on macOS and Linux — is checked separately, because resolving it contacts the host. In auto mode the prompt comes to you and the classifier doesn't decide it.
+
 ### Symlinks
 
 Two paths checked: the symlink and its target. Different treatment:
@@ -189,7 +199,18 @@ Two paths checked: the symlink and its target. Different treatment:
 
 ### Read/Edit limits
 
-Apply to Claude's built-in file tools and to file-related Bash commands Claude Code recognizes (`cat`, `head`, `tail`, `sed`). They **do not apply to arbitrary subprocesses** (e.g. a Python script that opens files itself). For OS-level enforcement, use the sandbox.
+**Covered:**
+
+- Claude's built-in file tools.
+- File commands Claude Code recognizes in Bash when they **name the file** — `cat`, `head`, `tail`, `sed`, `tee`.
+- The targets of Bash **redirections**: `> file` checks `Edit` rules, `< file` checks `Read` rules (v2.1.257+). A `tee` destination is checked against `Edit` rules, protected paths and the working directories (v2.1.269+) — and a `Bash(tee *)` allow rule does **not** cover a destination outside them.
+
+**Not covered:**
+
+- **A command that reads files without naming them** — the documented example is `grep -r pattern .` run from the directory holding the file. This matters more than it looks on macOS, where [`Glob` and `Grep` aren't in the default tool set](../tools/tools-reference.md) and search *is* `grep` through Bash.
+- Arbitrary subprocesses that open files themselves — a Python or Node script.
+
+> **So `Read` denies are not a secrets boundary.** `Read(./.env)` stops the Read tool, an `@file` mention, IDE-shared context and `cat .env`. It does not stop `grep -r AWS_SECRET .`. For a guarantee, escalate: a `PreToolUse` hook that inspects the command, or `sandbox.filesystem.denyRead`, which is OS-level and covers every subprocess. See [`../../shared/principles/enforcement-vs-influence.md`](../../shared/principles/enforcement-vs-influence.md).
 
 ## WebFetch rules
 
