@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-27
+verified_on: 2026-10-31
 sources:
   - https://code.claude.com/docs/en/sub-agents
 ---
@@ -34,13 +34,18 @@ Always registered in interactive sessions unless denied via `permissions.deny`.
 
 | Agent | Model | Tools | Purpose | Notes |
 | --- | --- | --- | --- | --- |
-| **`Explore`** | Haiku | Read-only (no Write/Edit) | File discovery, code search, codebase exploration | Specifies thoroughness on invoke: `quick` / `medium` / `very thorough` |
+| **`Explore`** | **Opus** on a Claude subscription, Console account, or `ANTHROPIC_BASE_URL` gateway — the model `opus` resolves to. On Bedrock / Google Cloud's Agent Platform / Foundry / Claude Platform on AWS / apps gateway it stays on the main model. | Read-only (no Write/Edit) | File discovery, code search, codebase exploration | Specifies thoroughness on invoke: `quick` / `medium` / `very thorough` |
 | **`Plan`** | Inherits | Read-only (no Write/Edit) | Codebase research during plan mode | Used by plan mode for exploration |
 | **`general-purpose`** | Inherits | All tools | Complex multi-step research + modification | Default when fork mode enabled but no specific type requested |
 | `statusline-setup` | Sonnet | — | When you run `/statusline` | Auto-invoked |
 | `claude-code-guide` | Haiku | — | When you ask about Claude Code features | Auto-invoked |
+| `claude` | Follows the model resolution order | All subagent tools | Catch-all for work that doesn't fit a specialised agent | — |
 
-> **Explore and Plan are the ONLY subagents that skip CLAUDE.md and git status.** Every other built-in and custom subagent loads both. There's no frontmatter field to change this — restate any rule that must reach the subagent in the delegation prompt.
+> **Explore and Plan skip CLAUDE.md and git status.** For **git status** that's the whole story — you can't change which subagents receive it.
+>
+> For **CLAUDE.md** there *is* a field: `omitClaudeMd: true` in frontmatter or `--agents` JSON. A subagent with it loads only the managed-policy files — or none at all when the definition itself comes from managed settings. Either way, a subdirectory's `CLAUDE.md` and matching path-scoped rules still load when the subagent touches files there.
+>
+> The main conversation still has your full CLAUDE.md when it reads the result, so most rules don't need to reach the subagent. For one that must ("ignore `vendor/`"), restate it in the delegation prompt.
 
 **Block subagents:**
 
@@ -93,29 +98,49 @@ Only `name` and `description` are required.
 | `isolation: worktree` | Run in a temporary git worktree, branched from default branch (not parent HEAD). Worktree auto-cleaned if no changes. |
 | `color` | `red`/`blue`/`green`/`yellow`/`purple`/`orange`/`pink`/`cyan` for UI. |
 | `initialPrompt` | Auto-submitted as first user turn when running as main session (via `--agent`). Commands + skills processed. Prepended to user prompt. |
+| `omitClaudeMd` | `true` launches the subagent without your user, project and local `CLAUDE.md` — see the note under Built-in subagents. |
+| `autoCompactWindow` | Token count from `100000` to `1000000` to make this subagent compact earlier. Write a **plain integer** — `200k` parses as `200`, falls out of range, and is ignored. No effect when the session runs as this agent via `--agent`. `CLAUDE_CODE_AUTO_COMPACT_WINDOW` wins over it. v2.1.296+. |
+| `experimental` | Experimental per-agent options, including `cacheTtl`. Read **only from subagent files**, never from `--agents` JSON. |
+
+Multi-word fields are **camelCase**, and an unrecognized field is **ignored without an error** — so a typo does nothing silently. `permissionMode: manual` is an accepted alias for `default`. In `--agents` JSON, `color` and `experimental` are ignored.
 
 > `cd` doesn't persist between Bash/PowerShell calls in a subagent and doesn't affect the parent's working directory. Use `isolation: worktree` for an isolated repo copy.
 
 > Subagents loaded at session start. Direct disk edits need restart. `/agents` interface edits take effect immediately.
 
+> **Combined descriptions have a 15,000-token budget.** Past it Claude Code shows a startup warning and still loads every subagent — nothing is dropped, but the roster is competing for the same context every turn.
+
+> **Subagents auto-compact.** Compaction fires as the subagent's own window fills, and `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` applies to them too. Per-agent tuning is `autoCompactWindow` above.
+
 ## Model resolution order
 
 Checked in this order, first match wins (subject to `availableModels` allowlist — excluded values are skipped):
 
-1. `CLAUDE_CODE_SUBAGENT_MODEL` env var
-2. Per-invocation `model` parameter (when Claude spawns)
-3. Subagent definition's `model` frontmatter
+1. Per-invocation `model` parameter when Claude spawns — **aliases only** (`sonnet`/`opus`/`haiku`/`fable`), and a mod's `agent.spawn` hook can override it
+2. The definition's `model` frontmatter (`inherit` = main conversation's model)
+3. `CLAUDE_CODE_SUBAGENT_MODEL`
 4. Main conversation's model
+
+**Before v2.1.251 the env var came first** and overrode both the parameter and the frontmatter. To force one model onto every subagent regardless, set `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` alongside it.
 
 ## Tools subagents can't use
 
-Inherited tools minus a few that don't apply in a nested context:
+Subagents inherit the main conversation's tools through **two** filters. **Forks skip both** and get the parent's exact pool.
 
+**Filter 1 — removed from every subagent**, even if named in `tools`:
+
+- `Agent`, once at the depth limit. In a fork the tool stays listed but errors instead of spawning.
 - `AskUserQuestion`
+- `EndConversation` (it can only end the main conversation)
 - `EnterPlanMode`
 - `ExitPlanMode` (unless `permissionMode: plan`)
 - `ScheduleWakeup`
 - `WaitForMcpServers`
+- `Workflow`
+
+**Filter 2 — background subagents**, which is **the default** for subagents Claude spawns from the main conversation. They keep only these built-ins: `Read`, `Grep`, `Glob`, `LSP`, `Bash`, `PowerShell`, `Edit`, `Write`, `NotebookEdit`, `WebFetch`, `WebSearch`, `TodoWrite`, `Skill`, `ToolSearch`, `EnterWorktree`, `ExitWorktree`, `Monitor`, `TaskStop`, `SendMessage`, `Artifact`, and `SubagentHandback` where it reports through it. All MCP tools are kept.
+
+> On macOS, Linux and WSL a subagent can **receive `Glob` and `Grep` even when the main conversation doesn't have them** — see [`tools-reference.md`](tools-reference.md).
 
 ## Tool allow / deny patterns
 
@@ -306,12 +331,16 @@ When `CLAUDE_CODE_FORK_SUBAGENT=1`, **every** subagent spawn runs in background 
 | **System prompt** | Agent's own prompt + Claude Code's appended env details. NOT the full Claude Code system prompt. |
 | **Task message** | The delegation prompt Claude writes when handing off. |
 | **CLAUDE.md + memory hierarchy** | Full (user, project, local, managed). **Explore and Plan skip.** |
-| **Git status** | Start-of-parent-session snapshot. Absent in non-git or with `includeGitInstructions: false`. **Explore and Plan skip.** |
-| **Preloaded skills** | Full content (not just description) of any skill in `skills:`. |
+| **Git status** | A snapshot read **when the subagent starts**, not the parent's start-of-session one. For a subagent in its own worktree, it shows that worktree's branch and commits. Absent in non-git or with `includeGitInstructions: false`. **Explore and Plan skip it, and you can't change that.** |
+| **Preloaded skills** | Full content (not just description) of any skill in `skills:`. Built-in agents preload none. |
+| **Sibling roster** | A system reminder listing `main` and every other *named* agent — valid `to` values for `SendMessage`. Only appears when the subagent's tools include `SendMessage` and at least one other agent has a name. It's a snapshot at start, so agents named later don't show. |
 | **Parent's conversation history** | **NO.** (Exception: forks inherit it.) |
 | **Parent's auto memory** | **NO.** |
+| **Your output style** | **NO** — a subagent runs its own system prompt. (Exception: forks.) |
 
 Forks are the only subagent type that inherits the parent's conversation history.
+
+> **A custom subagent's prompt replaces the Claude Code system prompt entirely**, the way `--system-prompt` does — unless the agent's prompt is empty. `CLAUDE.md` and project memory still load through the normal message flow even with `omitClaudeMd` set. Running `-p` as a custom agent that has its own prompt also starts **without** the git-status snapshot.
 
 ## Common patterns
 
@@ -387,13 +416,15 @@ When fork mode is enabled:
 - Claude can spawn type `fork`. Spawns without a type still use `general-purpose`.
 - **Every subagent spawn runs in background**, regardless of the `background` field. Set `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` to keep spawns synchronous.
 
-### Manual fork
+### Manual fork — `/subtask`, not `/fork`
 
 ```
-/fork draft unit tests for the parser changes so far
+/subtask draft unit tests for the parser changes so far
 ```
 
-Named from the first words of the directive. Appears in the panel below your prompt; runs in background while you continue.
+`/subtask` starts a fork whether or not fork mode is on. Named from the first words of the task; appears in the panel below your prompt and runs in the background while you continue.
+
+> **`/fork` does something else.** With agent view on — the default — `/fork` **copies the whole session into a new background session**. It only starts a forked subagent when agent view is turned off.
 
 ### Panel controls (running forks)
 
@@ -401,8 +432,16 @@ Named from the first words of the directive. Appears in the panel below your pro
 | --- | --- |
 | `↑` / `↓` | Move between rows |
 | `Enter` | Open transcript + send follow-up |
-| `x` | Dismiss finished / stop running |
+| `x` | Stop a running fork, or dismiss a row that's no longer running. On the main-session row — or on the row whose transcript you opened with `Enter` — `x` types into the prompt instead |
 | `Esc` | Return focus to prompt |
+
+A fork that finishes successfully has its row removed immediately; one that failed or that you stopped keeps its row for 30 seconds.
+
+With a transcript open, follow-up messages and skills go to **that agent**, while built-in commands go to your main conversation:
+
+- `/compact`, `/clear`, `/rewind` act on the main conversation, so you're asked to confirm first.
+- `/model` and `/fast` set the main conversation's, not the viewed agent's — they don't run from this view, and a notice says why.
+- `Ctrl+Enter` (or `Ctrl+X Ctrl+S`) delivers your message **before** the work the agent is waiting on finishes; anything backgroundable moves to the background and keeps running. v2.1.286+.
 
 ### Forks vs named subagents
 
@@ -420,8 +459,11 @@ When Claude spawns a fork via the Agent tool, it can pass `isolation: "worktree"
 
 ### Fork limitations
 
-- A fork cannot spawn another fork. Can spawn other subagent types (counts toward depth limit).
-- `CLAUDE_CODE_FORK_SUBAGENT=0` disables everywhere including server-side rollout.
+- A fork cannot spawn another fork. It can spawn other subagent types (counts toward the depth limit).
+- `CLAUDE_CODE_FORK_SUBAGENT=0` disables everywhere including server-side rollout. To block only forks while keeping other subagents, add `Agent(fork)` to `permissions.deny`.
+- **While fork mode is on, Claude can't wait for a subagent** in interactive terminal, VS Code or desktop sessions on your machine.
+- A fork **shares the parent's prompt cache**, because its system prompt and tool definitions are identical — so for a task needing the same context it costs less than a fresh subagent.
+- Claude can pass `isolation: "worktree"` to a fork so its edits land in a separate worktree.
 
 ## Subagent vs main vs skill vs `/btw`
 

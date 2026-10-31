@@ -168,7 +168,18 @@ Three cases where you should **not** bump:
 
 Leaving an old stamp is honest. It keeps the doc on the candidate list, which is where an unverified doc belongs.
 
-### 6. Sample what nothing flagged
+### 6. Sweep the whole repo for the identifiers you touched
+
+Once you've corrected a doc, grep the **entire repo** for every identifier you changed — setting keys, tool names, matcher values, plan names. Two reasons it keeps paying off:
+
+- **The same claim is often in two places.** A catalog table and a bullet list 250 lines apart; a tool doc and the principle that cites it. Fixing one and stopping leaves the repo contradicting itself.
+- **Sources mark things "removed", and that's the cheapest error to find.** Searching for an identifier the source says no longer exists has caught `bypass_permissions_disabled`, `teammateDefaultModel`, `TaskOutput` and `maxSkillDescriptionChars` — four errors, each a dead name sitting in a table as if it were live.
+
+```bash
+grep -rn 'identifierYouChanged' --include='*.md' .
+```
+
+### 7. Sample what nothing flagged
 
 Steps 1 and 2 only surface drift. Before you call the pass done, verify a handful of claims that nothing pointed at — drawn from the access-gating kind above, since those are the ones that fail silently.
 
