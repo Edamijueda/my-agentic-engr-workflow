@@ -1,6 +1,6 @@
 ---
 verified_against: 2.1.308
-verified_on: 2026-10-30
+verified_on: 2026-10-31
 sources:
   - https://code.claude.com/docs/en/memory
   - https://code.claude.com/docs/en/settings
@@ -111,6 +111,15 @@ Create `.claude/settings.json` with deny rules for secrets and high-blast-radius
 }
 ```
 
+> **Tell the user what these denies don't cover.** The `Read(...)` entries stop the Read tool, `@file` mentions, IDE-shared context, and Bash commands that **name** the file (`cat .env`). They do **not** stop a command that reads without naming it — a recursive `grep` from the project root will still find a secret, and on macOS that's the default search path because `Grep` isn't a loaded tool.
+>
+> Don't try to fix this with a `Bash(grep *)` deny — you'd break Claude's primary way of searching the codebase. If this project's secrets genuinely need a boundary rather than a speed bump, say so and name the two layers that hold:
+>
+> - A `PreToolUse` hook on `Bash` that inspects the command.
+> - `sandbox.filesystem.denyRead`, which is OS-level and covers every subprocess, including a script that opens the file itself.
+>
+> Both are deliberately **not** part of this baseline — see Step 4. Raising it is the user's call, not yours.
+
 ### Add what this project actually needs
 
 The universal block covers secrets and destructive git. Beyond it, add rules only for what you observed:
@@ -124,7 +133,7 @@ Don't add rules for commands the project doesn't use. A deny list full of irrele
 ### Project-specific secrets
 
 After applying the templates, **add any secrets paths you observed in `.env.example` or `.gitignore`**. Examples:
-- If `.env.example` shows `STRIPE_KEY=`, the existing `Read(./.env*)` covers it.
+- If `.env.example` shows `STRIPE_KEY=`, the existing `Read(./.env*)` entry already names that file — no new rule needed. (It still doesn't stop an unnamed read; see the note above.)
 - If you saw `credentials/aws.json` in the project, add `Read(./credentials/aws.json)`.
 - If the project has a non-standard secrets dir like `keys/`, add `Read(./keys/**)`.
 
@@ -195,6 +204,7 @@ After you've applied the steps, write a summary in your response with this struc
 
 **Deny rules applied:**
 [Bullet list of the key categories: secrets, force-push, etc.]
+[State plainly that the secrets denies are a speed bump, not a boundary — a recursive grep still reads them. Name the hook and sandbox options without setting them up.]
 
 **Allow rules applied (personal):**
 [Bullet list of the key categories: git read, [project-type] build/test commands]

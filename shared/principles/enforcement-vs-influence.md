@@ -23,7 +23,9 @@ Two signals you've picked the wrong side:
 
 Memory files (`CLAUDE.md`, `.claude/rules/`, custom system prompts) are sent to the model as context. The model reads them and tries to follow them, but there's no code-level check that the model actually does. If the model decides a rule doesn't apply or just forgets, the work proceeds.
 
-Permissions are evaluated by Claude Code itself before tool calls execute. A `Read(./.env)` deny rule blocks the read regardless of what the model thinks. Rules are evaluated deny → ask → allow, first match wins.
+Permissions are evaluated by Claude Code itself before tool calls execute, so a deny rule holds regardless of what the model thinks. Rules are evaluated deny → ask → allow, first match wins.
+
+What a rule covers is narrower than it looks, though: a `Read(./.env)` deny stops the Read tool and a `cat .env`, but not a recursive `grep` that never names the file. Enforcement is only as good as the surface the rule reaches — which is why the sandbox sits below it on this ladder.
 
 Hooks run as code in your shell. A `PreToolUse` hook exiting with code 2 blocks the tool call before permission rules are even evaluated. The hook can inspect the full tool input (the exact Bash command, the exact file path, the model the subagent is using) and make a decision your shell logic controls.
 
@@ -53,7 +55,7 @@ Goal: keep the agent away from `.env` files.
 | Layer | What it looks like | What it actually prevents |
 | --- | --- | --- |
 | CLAUDE.md | "Never read .env files." | Hopeful. The agent will probably listen. May not in edge cases. |
-| `permissions.deny: ["Read(./.env)"]` | Built-in deny rule | Agent's Read tool cannot read it. Also covers Bash file commands the agent recognizes (`cat`, `head`, etc.). |
+| `permissions.deny: ["Read(./.env)"]` | Built-in deny rule | Agent's Read tool cannot read it, nor an `@file` mention or IDE-shared context. Covers Bash file commands that **name** the file (`cat`, `head`, `sed`, `tee`) and redirection targets. **Does not cover a command that reads without naming the file**, such as a recursive `grep`. |
 | `PreToolUse` hook on Bash | Script blocks `cat .env`, `grep secret .env`, etc. | Bash invocations the permission rules miss (process wrappers, weird syntax). |
 | `sandbox.filesystem.denyRead: [".env"]` | OS-level rule | A Python script the agent runs that calls `open('.env')` is blocked too. |
 
